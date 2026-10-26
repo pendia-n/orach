@@ -139,13 +139,3 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 		env.DB.prepare('DELETE FROM attempts WHERE expires<?').bind(Math.floor(Date.now() / 1000))
 	]);
 }
-export default {
-	async scheduled(_event: ScheduledController, env: ResearchEnv, ctx: ExecutionContext) {
-		ctx.waitUntil(refresh(env));
-	},
-	async fetch() {
-		return new Response('Orach research scheduler. No public collection endpoint.', {
-			status: 404
-		});
-	}
-};

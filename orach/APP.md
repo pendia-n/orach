@@ -18,7 +18,7 @@ Orach helps temporary visitors understand everyday life somewhere new: food, dri
 
 Apply `migrations/0001_initial.sql` through Wrangler, locally before development and remotely only to the configured Orach database. Generate the non-sensitive catalogue seed with `node --experimental-strip-types scripts/seed.ts`; apply the resulting SQL once. Source research files in the sibling presets directory are **not** copied wholesale: they may contain credentials and malformed exports.
 
-App worker: `wrangler.jsonc`. Scheduler: `wrangler.research.jsonc`. They share D1. Configure secrets separately on each worker. Never commit `.env` or `.dev.vars`. No Git repository was created and no commit/push is required by this release request.
+Single worker: `orach`, configured by `wrangler.jsonc`. Root `worker.js` delegates HTTP requests to the SvelteKit build and scheduled events to `scripts/research.ts`. One D1 binding and one secret configuration serve both. Never commit `.env` or `.dev.vars`. No Git repository was created and no commit/push is required by this release request.
 
 ## Setup and limitations
 

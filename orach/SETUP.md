@@ -4,7 +4,7 @@
 
 One Tavily key, one Exa key and optionally one Firecrawl key. API keys authenticate usage; multiple keys within an account usually share its allowance. Do not rely on key rotation to multiply credits.
 
-Set `TAVILY_API_KEY` and `EXA_API_KEY` on **orach-research**, using Wrangler's interactive secret entry or the Cloudflare dashboard. Firecrawl is a manual fallback; the automatic worker does not need its key. No provider is called on ordinary page views, budget edits or signup.
+Set `TAVILY_API_KEY` and `EXA_API_KEY` on **orach**, using Wrangler's interactive secret entry or the Cloudflare dashboard. Firecrawl is a manual fallback; the automatic worker does not need its key. No provider is called on ordinary page views, budget edits or signup.
 
 The schedule picks the top 10 searched cities over 30 days, on the 1st and 15th, 02:00 UTC. Per city it makes four Tavily Basic searches and four Exa Answer calls. For ten cities and two cycles, the nominal baseline is **80 Tavily credits and 80 Exa Answer calls** (about US$0.40 at a US$0.005 base rate, actual response cost wins). No Firecrawl calls or Agent calls. These are discovery/review drafts, not proof of full section coverage. It reserves US$0.02 per Exa call until the returned cost is recorded; failed calls keep conservative reservations. Global caps: 1,000 Tavily credits and US$10 Exa monthly. Entries and comments are never automatically rewritten by the cron. Provider quota errors stay failed; no silent paid fallback.
 
@@ -31,14 +31,14 @@ Use Stripe CLI `stripe listen --forward-to http://localhost:5173/api/stripe/webh
 
 ### Secret entry
 
-Use Cloudflare Dashboard → Workers & Pages → orach → Settings → Variables and Secrets, or interactive `pnpm exec wrangler secret put VARIABLE_NAME`. For research, add `--config wrangler.research.jsonc`. Never print credential values. The generated `ORACH_JWT_SECRET` is already stored in root `.env`; preserve it across deployments. Rotating it signs out users.
+Use Cloudflare Dashboard → Workers & Pages → orach → Settings → Variables and Secrets, or interactive `pnpm exec wrangler secret put VARIABLE_NAME`. All app and research credentials go on this one worker. Never print credential values. The generated `ORACH_JWT_SECRET` is already stored in root `.env`; preserve it across deployments. Rotating it signs out users.
 
 ## Deployment
 
-`pnpm check` then `pnpm build`, deploy app with `pnpm exec wrangler deploy` and scheduler with `pnpm exec wrangler deploy --config wrangler.research.jsonc`. Apply migrations before deploying handlers that need them. No commit or push is needed.
+`pnpm check` then `pnpm build`, deploy the single app-and-scheduler worker with `pnpm exec wrangler deploy`. Apply migrations before deploying handlers that need them. No commit or push is needed.
 
 ## Deployment status
 
 App: https://orach.pendia-community.workers.dev
-Scheduler: orach-research; 02:00 UTC on the 1st and 15th.
+Scheduler: handled by orach itself; 02:00 UTC on the 1st and 15th.
 D1 schema and catalogue have been applied remotely. Local integration checks passed. The generated JWT signing secret is persisted locally and has been uploaded to the orach Worker with explicit user authorization. Live free signup, eight-day Secure HttpOnly sessions, protected D1 profile storage and logout were verified; the temporary verification account was removed. Stripe and research provider credentials have not been supplied.
