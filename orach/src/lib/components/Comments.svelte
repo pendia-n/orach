@@ -78,13 +78,14 @@
 	</div>
 	<p class="small-text muted intro">
 		Share a useful discovery, what you paid, or something you wish you’d known. Five unique likes
-		put the leading note first as this section’s community highlight. Votes do not verify a claim.
+		turn a note into a community info card, shown first in this section. Votes do not verify a
+		claim.
 	</p>
 	{#if loaded && !comments.length}<p class="no-notes">
 			No notes in this section yet. You can write the first.
 		</p>{/if}
-	{#each comments as comment, i}<article class:highlight={i === 0 && comment.likes >= 5}>
-			{#if i === 0 && comment.likes >= 5}<span class="badge"
+	{#each comments as comment}<article class:highlight={comment.likes >= 5}>
+			{#if comment.likes >= 5}<span class="badge"
 					><Icon name="spark" size={12} /> Community highlight</span
 				>{/if}
 			<div class="row comment-meta">
@@ -109,7 +110,7 @@
 				void post();
 			}}
 		>
-			<label class="label" for="comment">Add your fieldnote</label><textarea
+			<label class="label" for="comment">Add a comment or useful detail</label><textarea
 				id="comment"
 				bind:value={body}
 				minlength="10"

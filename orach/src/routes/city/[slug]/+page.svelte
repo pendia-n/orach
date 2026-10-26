@@ -60,11 +60,11 @@
 		</div>
 	</section>
 	<div class="notice info">
-		{#if data.city.slug === 'manchester'}These are excerpts from supplied research, not
-			live-confirmed recommendations. Check the linked source before visiting or booking. No current
-			observation date has been established.{:else}This city is on our collection list. Its
-			researched profile is not available yet. You can still create a budget with your own prices
-			and share community notes.{/if}
+		{#if data.entries.length}These are excerpts from collected research, not live-confirmed
+			recommendations. Check the linked source before visiting or booking. No current observation
+			date has been established.{:else}This city is on our collection list. Its researched profile
+			is not available yet. You can still create a budget with your own prices and share community
+			notes.{/if}
 	</div>
 	<div class="city-layout">
 		<div class="city-content">
@@ -81,6 +81,27 @@
 				<h2>{current.name}</h2>
 				<p>{current.description}</p>
 			</div>
+
+			{#if data.research[active]}
+				<section class="panel" style="margin-top:24px">
+					<p class="eyebrow">Collected research · needs checking</p>
+					{#if data.research[active].summary}<p style="white-space:pre-wrap">
+							{data.research[active].summary}
+						</p>{/if}
+					<details>
+						<summary>Read the original sources</summary>
+						<ul>
+							{#each data.research[active].sources as source}<li>
+									<a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a>
+								</li>{/each}
+						</ul>
+					</details>
+					<small
+						>Source material may include outdated or inapplicable information. Check the exact
+						place, date and conditions.</small
+					>
+				</section>
+			{/if}
 			<Comments city={data.city.slug} section={active} user={data.user} />
 			{#if filtered.length}<div class="entry-list">
 					{#each filtered as entry}<article class="entry-card">
@@ -90,10 +111,16 @@
 								<h3>{entry.name}</h3>
 								<p>{entry.description}</p>
 								<div class="entry-price">
-									{entry.amount !== null
-										? money(entry.amount, data.city.currency)
-										: 'Price not confirmed'}<small
-										>{entry.amount !== null ? entry.unit : 'Source details available'}</small
+									{active === 'neighbourhood'
+										? 'Explore this area'
+										: entry.amount !== null
+											? money(entry.amount, data.city.currency)
+											: 'Price not confirmed'}<small
+										>{active === 'neighbourhood'
+											? 'Local character and practical details'
+											: entry.amount !== null
+												? entry.unit
+												: 'Source details available'}</small
 									>
 								</div>
 								<div class="entry-actions">
@@ -115,9 +142,8 @@
 							: 'A fieldbook waiting to be filled.'}
 					</h3>
 					<p>
-						{active === 'essential' && data.city.slug === 'manchester'
-							? 'The supplied essentials export could not be safely imported. We have not turned incomplete research into prices.'
-							: 'We’ll show sourced places and practical details here when the profile is ready. Community notes below are open now.'}
+						We’ll show sourced places and practical details here when the section is ready.
+						Community notes are open now.
 					</p>
 					<button class="button secondary" onclick={request} disabled={requested || !data.user}
 						>{requested

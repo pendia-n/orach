@@ -1,3 +1,4 @@
+import { cities } from '../src/lib/catalog.ts';
 interface ResearchEnv {
 	DB: D1Database;
 	TAVILY_API_KEY?: string;
@@ -40,17 +41,30 @@ async function reserve(
 	return !!result;
 }
 export async function refresh(env: ResearchEnv, date = new Date()) {
+	const subscriber = await env.DB.prepare(
+		"SELECT id FROM subscriptions WHERE status IN ('active','trialing') AND current_period_end>? LIMIT 1"
+	)
+		.bind(Math.floor(date.getTime() / 1000))
+		.first();
+	if (!subscriber) return;
+
 	const month = date.toISOString().slice(0, 7),
 		cycle = month + '-' + (date.getUTCDate() < 15 ? '01' : '15');
 	// Search events are deduplicated per pseudonymous visitor, city and day by the app.
 	const top = await env.DB.prepare(
-		`SELECT c.slug,c.name,c.country,COUNT(*) AS searches FROM search_events e JOIN cities c ON c.slug=e.city_slug WHERE e.searched_at>=datetime('now','-30 days') GROUP BY c.slug ORDER BY searches DESC,c.slug ASC LIMIT 10`
-	).all<{ slug: string; name: string; country: string }>();
+		`SELECT c.slug,c.name,c.country,COUNT(*) AS searches FROM search_events e JOIN cities c ON c.slug=e.city_slug WHERE e.searched_at>=datetime('now','-7 days') AND (c.status IN ('draft','published') OR c.slug IN (${cities.map(() => '?').join(',')})) GROUP BY c.slug ORDER BY searches DESC,c.slug ASC LIMIT 10`
+	)
+		.bind(...cities.map((city) => city.slug))
+		.all<{ slug: string; name: string; country: string }>();
 	for (const city of top.results)
 		for (const section of sections) {
-			const provider = ['play', 'clothing', 'neighbourhood', 'stay'].includes(section)
-				? 'exa'
-				: 'tavily';
+			const provider =
+				section === 'transport'
+					? 'firecrawl'
+					: ['play', 'clothing', 'neighbourhood', 'stay'].includes(section)
+						? 'exa'
+						: 'tavily';
+			const searchExa = ['play', 'clothing'].includes(section);
 			const id = cycle + ':' + city.slug + ':' + section;
 			const exists = await env.DB.prepare(
 				'INSERT OR IGNORE INTO research_jobs(id,cycle,city_slug,section,provider) VALUES(?,?,?,?,?)'
@@ -58,7 +72,12 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 				.bind(id, cycle, city.slug, section, provider)
 				.run();
 			if (!exists.meta.changes) continue;
-			const key = provider === 'exa' ? env.EXA_API_KEY : env.TAVILY_API_KEY;
+			const key =
+				provider === 'exa'
+					? env.EXA_API_KEY
+					: provider === 'firecrawl'
+						? env.FIRECRAWL_API_KEY
+						: env.TAVILY_API_KEY;
 			if (!key) {
 				await env.DB.prepare("UPDATE research_jobs SET status='awaiting_key' WHERE id=?")
 					.bind(id)
@@ -70,7 +89,7 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 				!(await reserve(
 					env.DB,
 					provider,
-					provider === 'exa' ? 0.02 : 1,
+					provider === 'exa' ? 0.02 : provider === 'firecrawl' ? 7 : 1,
 					provider === 'exa' ? 10 : 1000,
 					month
 				))
@@ -83,30 +102,84 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 			const query = `${city.name}, ${city.country}: ${tasks[section]}`;
 			try {
 				const response = await fetch(
-					provider === 'exa' ? 'https://api.exa.ai/answer' : 'https://api.tavily.com/search',
+					provider === 'exa'
+						? searchExa
+							? 'https://api.exa.ai/search'
+							: 'https://api.exa.ai/answer'
+						: provider === 'firecrawl'
+							? 'https://api.firecrawl.dev/v2/search'
+							: 'https://api.tavily.com/search',
 					{
 						method: 'POST',
 						headers:
-							provider === 'exa'
-								? { 'Content-Type': 'application/json', 'x-api-key': key }
-								: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
-						body: JSON.stringify(
-							provider === 'exa'
+							provider === 'firecrawl'
 								? {
-										query: `Build a draft ${section} section for ${city.name}, ${city.country}, as of ${date.toISOString().slice(0, 10)}. Focus: ${tasks[section]}. Return up to 4 distinct entries with exact locality, original prices and units where supported, inclusions, restrictions, source URLs and short evidence. Prefer official/local-language sources. Separate fact from interpretation. Unknown is acceptable. Exclude expired events and incorrect geography. Do not invent safety, current availability or prices. This is a review draft, not automatic publication. Maximum 600 words.`,
-										model: 'exa',
-										text: true
-									}
-								: {
 										query,
-										search_depth: 'basic',
-										auto_parameters: false,
-										max_results: 5,
-										include_raw_content: 'markdown',
-										include_answer: false,
-										include_images: false,
-										include_usage: true
+										limit: 5,
+										sources: [{ type: 'web' }],
+										domainTools: false,
+										scrapeOptions: {
+											formats: ['markdown'],
+											onlyMainContent: true,
+											maxAge: 0,
+											parsers: []
+										}
 									}
+								: provider === 'exa' && searchExa
+									? {
+											query,
+											type: 'auto',
+											numResults: 5,
+											contents: {
+												text: { maxCharacters: 20000 },
+												highlights: true,
+												maxAgeHours: 24
+											}
+										}
+									: provider === 'exa'
+										? { 'Content-Type': 'application/json', 'x-api-key': key }
+										: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
+						body: JSON.stringify(
+							provider === 'firecrawl'
+								? {
+										query,
+										limit: 5,
+										sources: [{ type: 'web' }],
+										domainTools: false,
+										scrapeOptions: {
+											formats: ['markdown'],
+											onlyMainContent: true,
+											maxAge: 0,
+											parsers: []
+										}
+									}
+								: provider === 'exa' && searchExa
+									? {
+											query,
+											type: 'auto',
+											numResults: 5,
+											contents: {
+												text: { maxCharacters: 20000 },
+												highlights: true,
+												maxAgeHours: 24
+											}
+										}
+									: provider === 'exa'
+										? {
+												query: `Build a draft ${section} section for ${city.name}, ${city.country}, as of ${date.toISOString().slice(0, 10)}. Focus: ${tasks[section]}. Return up to 4 distinct entries with exact locality, original prices and units where supported, inclusions, restrictions, source URLs and short evidence. Prefer official/local-language sources. Separate fact from interpretation. Unknown is acceptable. Exclude expired events and incorrect geography. Do not invent safety, current availability or prices. This is a review draft, not automatic publication. Maximum 600 words.`,
+												model: 'exa',
+												text: true
+											}
+										: {
+												query,
+												search_depth: 'basic',
+												auto_parameters: false,
+												max_results: 5,
+												include_raw_content: 'markdown',
+												include_answer: false,
+												include_images: false,
+												include_usage: true
+											}
 						),
 						signal: AbortSignal.timeout(45000)
 					}
@@ -116,8 +189,10 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 				const actual =
 					provider === 'exa'
 						? Number((result as { costDollars?: { total: number } }).costDollars?.total ?? 0.02)
-						: Number((result as { usage?: { credits: number } }).usage?.credits ?? 1);
-				const reserved = provider === 'exa' ? 0.02 : 1;
+						: provider === 'firecrawl'
+							? Number((result as { creditsUsed?: number }).creditsUsed ?? 7)
+							: Number((result as { usage?: { credits: number } }).usage?.credits ?? 1);
+				const reserved = provider === 'exa' ? 0.02 : provider === 'firecrawl' ? 7 : 1;
 				if (Number.isFinite(actual) && actual >= 0)
 					await env.DB.prepare(
 						'UPDATE provider_usage SET used=MAX(0,used+?) WHERE month=? AND provider=?'
@@ -125,7 +200,7 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 						.bind(actual - reserved, month, provider)
 						.run();
 				await env.DB.prepare("UPDATE research_jobs SET status='needs_review',result=? WHERE id=?")
-					.bind(JSON.stringify(result).slice(0, 250000), id)
+					.bind(JSON.stringify(result), id)
 					.run();
 			} catch (e) {
 				await env.DB.prepare("UPDATE research_jobs SET status='failed',error=? WHERE id=?")

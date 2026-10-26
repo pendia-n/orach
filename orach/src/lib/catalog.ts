@@ -102,16 +102,52 @@ export const slugify = (s: string) =>
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, '-')
 		.replace(/^-|-$/g, '');
+export const launchCityNames = [
+	'Phuket',
+	'Chiang Mai',
+	'Hanoi',
+	'Manchester',
+	'Kaohsiung',
+	'Busan',
+	'Tokyo',
+	'Manila',
+	'Mumbai',
+	'Dubai',
+	'Bristol',
+	'Nice',
+	'Bordeaux',
+	'Bologna',
+	'Naples',
+	'Valencia',
+	'Munich',
+	'Cologne',
+	'Rotterdam',
+	'Budapest',
+	'Antalya',
+	'Kraków',
+	'Tbilisi',
+	'Chicago',
+	'Québec City',
+	'Rio de Janeiro',
+	'Perth',
+	'Wellington',
+	'Marrakesh',
+	'Cairo',
+	'Tel Aviv',
+	'Cape Town'
+];
 export const cities: City[] = groups.flatMap(([country, currency, region, color, names]) =>
-	names.map((name) => ({
-		name,
-		country,
-		currency,
-		region,
-		color,
-		slug: slugify(name),
-		status: name === 'Manchester' ? 'draft' : 'awaiting'
-	}))
+	names
+		.filter((name) => launchCityNames.includes(name))
+		.map((name) => ({
+			name,
+			country,
+			currency,
+			region,
+			color,
+			slug: slugify(name),
+			status: name === 'Manchester' ? 'draft' : 'awaiting'
+		}))
 );
 export type Entry = {
 	id: string;

@@ -29,6 +29,7 @@
 
 <svelte:head><title>Explore 55 destinations — Orach</title></svelte:head>
 <div class="container">
+	<a class="text-link" href="/discover">Find a city beyond the collection →</a>
 	<div class="page-heading">
 		<div>
 			<p class="eyebrow">Your next everyday</p>

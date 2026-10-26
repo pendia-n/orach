@@ -4,6 +4,15 @@ import { session, requireUser, hash, equal, issue, limit, passwordValid } from '
 import { cities, sections } from '#lib/catalog';
 import { checkout, webhook } from '#lib/server/payments';
 const validSection = (s: string) => sections.some((x) => x.id === s);
+async function knownCity(event: RequestEvent, slug: unknown) {
+	if (typeof slug !== 'string') return false;
+	if (cities.some((city) => city.slug === slug)) return true;
+	return !!(await database(event.platform)
+		.prepare("SELECT slug FROM cities WHERE slug=? AND status IN ('draft','published')")
+		.bind(slug)
+		.first());
+}
+
 const text = (o: Record<string, unknown>, key: string) =>
 	typeof o[key] === 'string' ? (o[key] as string).trim() : '';
 export async function GET(event: RequestEvent) {
@@ -21,7 +30,7 @@ export async function GET(event: RequestEvent) {
 	if (path === 'comments') {
 		const city = event.url.searchParams.get('city') ?? '',
 			section = event.url.searchParams.get('section') ?? '';
-		if (!cities.some((c) => c.slug === city) || !validSection(section))
+		if (!(await knownCity(event, city)) || !validSection(section))
 			error(400, 'Choose a city and section.');
 		const user = await session(event);
 		const result = await database(event.platform)
@@ -30,7 +39,13 @@ export async function GET(event: RequestEvent) {
 			)
 			.bind(user?.id ?? '', city, section)
 			.all();
-		return json({ comments: result.results, threshold: 5 });
+		return json({
+			comments: result.results.map((comment) => ({
+				...comment,
+				community_card: Number(comment.likes) >= 5
+			})),
+			threshold: 5
+		});
 	}
 	if (path === 'profile') {
 		const u = await requireUser(event);
@@ -182,7 +197,7 @@ export async function POST(event: RequestEvent) {
 	}
 	if (path === 'search') {
 		const slug = text(o, 'city');
-		if (!cities.some((c) => c.slug === slug)) error(400, 'Unknown city.');
+		if (!(await knownCity(event, slug))) error(400, 'Unknown city.');
 		await limit(event, 'search', 60);
 		let visitor = event.cookies.get('orach_visitor');
 		if (!visitor) {
@@ -225,7 +240,7 @@ export async function POST(event: RequestEvent) {
 	}
 	if (path === 'stays') {
 		const data = o.stay as Record<string, unknown>;
-		if (!data || typeof data !== 'object' || !cities.some((c) => c.slug === data.city))
+		if (!data || typeof data !== 'object' || !(await knownCity(event, data.city)))
 			error(400, 'Choose a destination.');
 		if (JSON.stringify(data).length > 20000) error(400, 'This stay is too large.');
 		const start = Date.parse(String(data.arrival)),
@@ -291,7 +306,7 @@ export async function POST(event: RequestEvent) {
 			section = text(o, 'section'),
 			body = text(o, 'body');
 		if (
-			!cities.some((c) => c.slug === city) ||
+			!(await knownCity(event, city)) ||
 			!validSection(section) ||
 			body.length < 10 ||
 			body.length > 1200
@@ -336,7 +351,7 @@ export async function POST(event: RequestEvent) {
 	}
 	if (path === 'coverage') {
 		const city = text(o, 'city');
-		if (!cities.some((c) => c.slug === city)) error(400, 'Unknown city.');
+		if (!(await knownCity(event, city))) error(400, 'Unknown city.');
 		await db
 			.prepare('INSERT OR IGNORE INTO coverage_requests(city_slug) VALUES(?)')
 			.bind(city)
