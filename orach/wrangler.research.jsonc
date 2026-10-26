@@ -1,0 +1,14 @@
+{
+	"name": "orach-research",
+	"main": "scripts/research-worker.ts",
+	"compatibility_date": "2026-10-06",
+	"triggers": { "crons": ["0 2 1,15 * *"] },
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "orach",
+			"database_id": "3bda9037-28f5-4c25-af6b-a36cb781dd14"
+		}
+	],
+	"observability": { "enabled": true }
+}
