@@ -7,7 +7,7 @@ export async function runCitySection(env:Env,task:CityTask){
  const db=env.DB,{slug,name,country,currency,section}=task,id=`discovery:${slug}:${section}`;
  const previous=await db.prepare('SELECT status,result,lease_until,attempts FROM research_jobs WHERE id=?').bind(id).first<{status:string;result:string|null;lease_until:number;attempts:number}>();
  const now=Math.floor(Date.now()/1000);
- const recovering=previous?.status==='running' && (previous.lease_until||0)<=now && previous.attempts<3;
+ const recovering=!!previous && previous.attempts<3 && (previous.status==='failed' || (previous.status==='running' && (previous.lease_until||0)<=now));
  if(previous?.status==='running' && previous.lease_until<=now && previous.attempts>=3){await db.prepare("UPDATE research_jobs SET status='failed',error='Job interrupted repeatedly; research not completed' WHERE id=? AND status='running'").bind(id).run();return {slug,status:'failed',result:null};}
  if(previous?.status==='running'&&!recovering)throw Error('Research is already running; retry status later.');
  if(previous&&!recovering)return {slug,status:previous.status,result:previous.result?JSON.parse(previous.result):null};
@@ -38,7 +38,7 @@ export async function runCitySection(env:Env,task:CityTask){
 		.run();
 	const claimed = await db
 		.prepare(
-			"INSERT INTO research_jobs(id,cycle,city_slug,section,provider,status,lease_until) VALUES(?,'discovery',?,?,?,'running',?) ON CONFLICT(id) DO UPDATE SET lease_until=excluded.lease_until,attempts=research_jobs.attempts+1 WHERE research_jobs.status='running' AND research_jobs.lease_until<=? AND research_jobs.attempts<3"
+			"INSERT INTO research_jobs(id,cycle,city_slug,section,provider,status,lease_until) VALUES(?,'discovery',?,?,?,'running',?) ON CONFLICT(id) DO UPDATE SET status='running',error=NULL,lease_until=excluded.lease_until,attempts=research_jobs.attempts+1 WHERE (research_jobs.status='failed' OR (research_jobs.status='running' AND research_jobs.lease_until<=?)) AND research_jobs.attempts<3"
 		)
 		.bind(id, slug, section, request.provider,now+45,now)
 		.run();
