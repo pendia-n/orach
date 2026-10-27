@@ -3,13 +3,14 @@
 	import { api, readLocal } from '#lib/client';
 	import Icon from '#lib/components/Icon.svelte';
 	let { data } = $props();
-	let home = $state(''),
+	let homeCountry = $state(''), homeCurrency = $state(''), citySlug = $state(''),
+		home = $state(''),
 		currency = $state('HKD'),
 		travellers = $state(1),
 		message = $state(''),
 		busy = $state(false);
 	onMount(async () => {
-		let profile = readLocal('orach-profile', { home: '', currency: 'HKD', travellers: 1 });
+		let profile = readLocal('orach-profile', { home: '', currency: 'HKD', travellers: 1,homeCountry:'',homeCurrency:'' });
 		if (data.user) {
 			try {
 				profile = (await api('profile')).profile ?? profile;
@@ -17,19 +18,20 @@
 				message = 'Your saved device profile is available. Account sync could not be reached.';
 			}
 		}
-		home = profile.home;
+		home = profile.home;homeCountry=profile.homeCountry||'';homeCurrency=profile.homeCurrency||'';
 		currency = profile.currency;
 		travellers = profile.travellers;
 	});
 	async function save() {
 		busy = true;
 		try {
-			const profile = { home, currency, travellers };
+			const profile = { home, currency, travellers,homeCountry,homeCurrency };
 			if (data.user) await api('profile', { profile });
 			localStorage.setItem('orach-profile', JSON.stringify(profile));
 			message = data.user
 				? 'Home profile saved to your account.'
 				: 'Home profile saved on this device. Sign up free to sync it.';
+			if(data.user && homeCountry && /^[A-Z]{3}$/.test(homeCurrency)){const result=await api('discovery',{city:home,country:homeCountry,currency:homeCurrency});citySlug=result.slug;message+=' City overview available; member research continues in the background.';}
 		} catch (e) {
 			message = (e as Error).message;
 		} finally {
@@ -72,6 +74,8 @@
 					maxlength="100"
 				/><small>We won’t infer this from your currency.</small>
 			</div>
+			<div class="form-grid"><div class="field"><label for="home-country">Home country (for city research)</label><input id="home-country" bind:value={homeCountry} maxlength="80" placeholder="For example, Japan" /></div><div class="field"><label for="home-currency">Home city's local currency</label><input id="home-currency" bind:value={homeCurrency} maxlength="3" pattern="[A-Z]{3}" placeholder="JPY" /><small>Optional. This can differ from your familiar currency.</small></div></div>
+ {#if citySlug}<p><a class="text-link" href={'/city/'+citySlug}>Open your city's fieldnotes →</a></p>{/if}
 			<div class="form-grid">
 				<div class="field">
 					<label for="currency">Familiar currency</label><select id="currency" bind:value={currency}

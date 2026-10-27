@@ -69,7 +69,7 @@ export async function GET(event: RequestEvent) {
 		const id = event.url.searchParams.get('stay');
 		const db = database(event.platform);
 		const ent = await stayAccess(database(event.platform),u.id,id);
-		if (!ent) error(403, 'A stay pass is required.');
+		if (!ent) error(403, 'An active membership or valid legacy stay pass is required.');
 		if (path === 'scenarios') {
 			const r = await db
 				.prepare('SELECT name,data FROM scenarios WHERE stay_id=? AND user_id=?')
@@ -218,6 +218,8 @@ export async function POST(event: RequestEvent) {
 		if (!/^[A-Z]{3}$/.test(currency)) error(400, 'Choose a familiar currency.');
 		const value = {
 			home,
+			homeCountry:String(profile.homeCountry||'').slice(0,80),
+			homeCurrency:/^[A-Z]{3}$/.test(String(profile.homeCurrency))?profile.homeCurrency:'',
 			currency,
 			travellers: Math.max(1, Math.min(20, Number(profile.travellers) || 1))
 		};
@@ -387,7 +389,7 @@ export async function POST(event: RequestEvent) {
 		if (!name || name.length > 60 || !o.stay || JSON.stringify(o.stay).length > 20000)
 			error(400, 'Check the scenario details.');
 		const ent = await stayAccess(database(event.platform),u.id,stayId);
-		if (!ent) error(403, 'A stay pass is required.');
+		if (!ent) error(403, 'An active membership or valid legacy stay pass is required.');
 		await db
 			.prepare(
 				'INSERT INTO scenarios(id,stay_id,user_id,name,data) SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM scenarios WHERE stay_id=? AND user_id=?)<3'

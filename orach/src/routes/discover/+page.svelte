@@ -5,7 +5,7 @@
 	let { data } = $props();
 	let city = $state(page.url.searchParams.get('city') || ''),
 		country = $state(''),
-		currency = $state('EUR'),
+		currency = $state(''),
 		summary = $state(''),
 		slug = $state(''),
 		message = $state(''),

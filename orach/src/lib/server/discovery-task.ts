@@ -1,11 +1,15 @@
+import {researchPreview} from './research-preview.ts';
 import {writeResearch} from './research-cache.ts';
 import {overviewRequest,sectionRequest,type ResearchSection} from './research-requests.ts';
 export type CityTask={slug:string;name:string;country:string;currency:string;section:string};
 export async function runCitySection(env:Env,task:CityTask){
  const db=env.DB,{slug,name,country,currency,section}=task,id=`discovery:${slug}:${section}`;
- const previous=await db.prepare('SELECT status,result FROM research_jobs WHERE id=?').bind(id).first<{status:string;result:string|null}>();
- if(previous?.status==='running')throw Error('Research is already running; retry status later.');
- if(previous)return {slug,status:previous.status,result:previous.result?JSON.parse(previous.result):null};
+ const previous=await db.prepare('SELECT status,result,lease_until,attempts FROM research_jobs WHERE id=?').bind(id).first<{status:string;result:string|null;lease_until:number;attempts:number}>();
+ const now=Math.floor(Date.now()/1000);
+ const recovering=previous?.status==='running' && (previous.lease_until||0)<=now && previous.attempts<3;
+ if(previous?.status==='running' && previous.lease_until<=now && previous.attempts>=3){await db.prepare("UPDATE research_jobs SET status='failed',error='Job interrupted repeatedly; research not completed' WHERE id=? AND status='running'").bind(id).run();return {slug,status:'failed',result:null};}
+ if(previous?.status==='running'&&!recovering)throw Error('Research is already running; retry status later.');
+ if(previous&&!recovering)return {slug,status:previous.status,result:previous.result?JSON.parse(previous.result):null};
 	const request =
 		section === 'overview'
 			? { ...overviewRequest({ name, country }), provider: 'exa' }
@@ -33,9 +37,9 @@ export async function runCitySection(env:Env,task:CityTask){
 		.run();
 	const claimed = await db
 		.prepare(
-			"INSERT OR IGNORE INTO research_jobs(id,cycle,city_slug,section,provider,status) VALUES(?,'discovery',?,?,?,'running')"
+			"INSERT INTO research_jobs(id,cycle,city_slug,section,provider,status,lease_until) VALUES(?,'discovery',?,?,?,'running',?) ON CONFLICT(id) DO UPDATE SET lease_until=excluded.lease_until,attempts=research_jobs.attempts+1 WHERE research_jobs.status='running' AND research_jobs.lease_until<=? AND research_jobs.attempts<3"
 		)
-		.bind(id, slug, section, request.provider)
+		.bind(id, slug, section, request.provider,now+45,now)
 		.run();
 	if (!claimed.meta.changes) {
 		await db
@@ -60,15 +64,15 @@ export async function runCitySection(env:Env,task:CityTask){
 		if (new TextEncoder().encode(serialized).length > 1800000)
 			throw new Error('Response exceeds storage limit; retained as failed rather than truncated.');
 		if (result.success === false) throw new Error('Research provider reported a failure.');
-		await db
-			.prepare("UPDATE research_jobs SET status='needs_review',result=? WHERE id=?")
-			.bind(serialized, id)
-			.run();
 		await writeResearch(db, slug, section, request.provider, {
 			city: { name, country, currency },
 			response: result
 		});
-		return {slug,status:'needs_review',result};
+		await db
+			.prepare("UPDATE research_jobs SET status='needs_review',result=? WHERE id=?")
+			.bind(JSON.stringify(researchPreview(result)), id)
+			.run();
+		return {slug,status:'needs_review',result:researchPreview(result)};
 	} catch (cause) {
 		const message = cause instanceof Error ? cause.message : 'Research failed';
 		await db

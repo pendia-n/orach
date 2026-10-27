@@ -11,3 +11,7 @@ test('all eight queued sections persist profile evidence through their assigned 
  const old=globalThis.fetch;globalThis.fetch=async(url)=>{requests.push(String(url));return Response.json({answer:'Provider fixture',results:[{title:'Official source',url:'https://example.org/source'}]})};
  try{await Promise.all(['eat','drink','play','clothing','essential','neighbourhood','stay','transport'].map(section=>runCitySection({DB:db,TAVILY_API_KEY:'fixture',EXA_API_KEY:'fixture',FIRECRAWL_API_KEY:'fixture'} as any,{slug:'test-city',name:'Test City',country:'Test',currency:'EUR',section})));assert.equal(saved.length,8);assert.equal(requests.filter(url=>url.includes('tavily')).length,3);assert.equal(requests.filter(url=>url.includes('firecrawl')).length,1);}finally{globalThis.fetch=old;}
 });
+test('an unexpired job lease prevents duplicate provider spending',async()=>{
+ const db={prepare(){return{bind(){return{async first(){return{status:'running',result:null,lease_until:Math.floor(Date.now()/1000)+45,attempts:1}}}}}}};
+ await assert.rejects(()=>runCitySection({DB:db} as any,{slug:'city',name:'City',country:'Country',currency:'EUR',section:'eat'}),/already running/);
+});

@@ -55,9 +55,10 @@ export async function POST(event: RequestEvent) {
  return json({slug,status:'queued'});
  }
 	const result=await runCitySection(env,{slug,name,country,currency,section:'overview'});
+ let queued=false;
  if(result.status==='needs_review' && await subscriber(db,user.id)){
   if(!env.CITY_RESEARCH_QUEUE)error(503,'Background research is not configured.');
-  await env.CITY_RESEARCH_QUEUE.sendBatch([...researchSections,'images'].map(section=>({body:{slug,name,country,currency,section}})));
+  await env.CITY_RESEARCH_QUEUE.sendBatch([...researchSections,'images'].map(section=>({body:{slug,name,country,currency,section}})));queued=true;
  }
- return json({...result,queued:await subscriber(db,user.id)});
+ return json({...result,queued});
 }
