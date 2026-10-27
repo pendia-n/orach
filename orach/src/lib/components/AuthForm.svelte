@@ -101,7 +101,7 @@
 		>
 			<label for="recovery"
 				>{kind === 'signup'
-					? 'Create a recovery passcode'
+					? 'Recovery passcode (optional)'
 					: kind === 'security'
 						? 'New recovery passcode (optional)'
 						: 'Recovery passcode'}</label
@@ -114,10 +114,9 @@
 				maxlength="8"
 				pattern="[a-z0-9]{8}"
 				autocomplete={kind === 'recovery' ? 'off' : 'new-password'}
-				required={kind !== 'security'}
+				required={kind === 'recovery'}
 			/><small
-				>Exactly 8 lowercase letters or numbers. Save it somewhere safe; it’s how you recover your
-				account.</small
+				>Optional at signup. If supplied, use exactly 8 lowercase letters or numbers (digits only are accepted), different from your password. Without a recovery code, passcode recovery is unavailable.</small
 			>
 		</div>{/if}
 	{#if kind === 'signup' || kind === 'login' || kind === 'security' || (kind === 'recovery' && step === 2)}<div

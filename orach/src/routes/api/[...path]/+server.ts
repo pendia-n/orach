@@ -135,14 +135,15 @@ export async function POST(event: RequestEvent) {
 		if (!/^[a-zA-Z0-9_]{3,24}$/.test(username))
 			error(400, 'Use 3–24 letters, numbers or underscores.');
 		if (!passwordValid(password)) error(400, 'Use 7–18 characters with a letter and a number.');
-		if (!/^[a-z0-9]{8}$/.test(recovery) || recovery === password)
-			error(400, 'Use a different 8-character recovery passcode of lowercase letters and numbers.');
+		if (recovery && !/^[a-z0-9]{8}$/.test(recovery))
+			error(400, 'Recovery code must be exactly 8 lowercase letters or numbers. Digits only are accepted.');
+		if (recovery && recovery === password) error(400, 'Recovery code must be different from your password, or leave it blank.');
 		if (!event.platform?.env.ORACH_JWT_SECRET) error(503, 'Account signing is not configured.');
 		const id = crypto.randomUUID();
 		try {
 			await db
 				.prepare('INSERT INTO users(id,username,password,recovery) VALUES(?,?,?,?)')
-				.bind(id, username, await hash(password), await hash(recovery))
+				.bind(id, username, await hash(password), recovery ? await hash(recovery) : '')
 				.run();
 		} catch (e) {
 			if (String(e).includes('UNIQUE')) error(409, 'That username is already in use.');
