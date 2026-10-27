@@ -86,9 +86,9 @@
 			{#if data.research[active]}
 				<section class="panel" style="margin-top:24px">
 					<p class="eyebrow">Collected research · needs checking</p>
-					{#if data.research[active].summary}<p style="white-space:pre-wrap">
+					{#if data.research[active].summary}<details><summary>Read the research notes</summary><p style="white-space:pre-wrap">
 							{data.research[active].summary}
-						</p>{/if}
+						</p></details>{/if}
 					<details>
 						<summary>Read the original sources</summary>
 						<ul>

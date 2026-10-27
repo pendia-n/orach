@@ -1,3 +1,4 @@
+import {sourceExcerpt} from './source-excerpt.ts';
 import {priceEvidence} from './price-evidence.ts';
 import type { Entry, Section } from '../catalog.ts';
 export function researchEntries(input: unknown, section: Section, city: string): Entry[] {
@@ -94,7 +95,7 @@ export function researchEntries(input: unknown, section: Section, city: string):
 					? row.description
 					: highlights;
 		const pricePassages=Array.isArray(row.price_evidence)?row.price_evidence.filter((x):x is string=>typeof x==='string'):priceEvidence(passage);
-		const quote = passage.split(/\s+/).filter(Boolean).slice(0, 25).join(' ');
+		const quote = sourceExcerpt(passage);
 		records.push({
 			id: `${city}-${section}-source-${index}`,
 			section,
