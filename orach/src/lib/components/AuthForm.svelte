@@ -112,7 +112,6 @@
 				bind:value={recovery}
 				minlength="8"
 				maxlength="8"
-				pattern="[a-z0-9]{8}"
 				autocomplete={kind === 'recovery' ? 'off' : 'new-password'}
 				required={kind === 'recovery'}
 			/><small
