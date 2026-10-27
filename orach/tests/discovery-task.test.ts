@@ -15,3 +15,16 @@ test('an unexpired job lease prevents duplicate provider spending',async()=>{
  const db={prepare(){return{bind(){return{async first(){return{status:'running',result:null,lease_until:Math.floor(Date.now()/1000)+45,attempts:1}}}}}}};
  await assert.rejects(()=>runCitySection({DB:db} as any,{slug:'city',name:'City',country:'Country',currency:'EUR',section:'eat'}),/already running/);
 });
+
+test('failed delivery retries below the limit and exhausted delivery spends nothing',async()=>{
+ const old=globalThis.fetch;let calls=0;
+ globalThis.fetch=async()=>{calls++;return Response.json({answer:'Recovered provider response'});};
+ const task={slug:'retry-city',name:'Retry City',country:'Test',currency:'EUR',section:'eat'};
+ function database(attempts:number){return{prepare(sql:string){return{bind(){return this},async first(){if(sql.includes('SELECT status'))return{status:'failed',result:null,lease_until:0,attempts};return{used:1}},async run(){return{meta:{changes:1}}}}},async batch(){return[]}};}
+ try{
+  const recovered=await runCitySection({DB:database(1),TAVILY_API_KEY:'fixture'} as any,task);
+  assert.equal(recovered.status,'needs_review');assert.equal(calls,1);
+  const exhausted=await runCitySection({DB:database(3)} as any,task);
+  assert.equal(exhausted.status,'failed');assert.equal(calls,1);
+ }finally{globalThis.fetch=old;}
+});
