@@ -1,6 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { error } from '@sveltejs/kit';
-import { database } from './db';
+import { database } from './db.ts';
 const encoder = new TextEncoder();
 export const DAYS = 8 * 24 * 60 * 60;
 export const passwordValid = (s: string) =>

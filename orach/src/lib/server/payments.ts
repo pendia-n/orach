@@ -1,5 +1,5 @@
-import {subscriber} from './access';
-import { equal } from './auth';
+import {subscriber} from './access.ts';
+import { equal } from './auth.ts';
 type CheckoutSession = {
 	id: string;
 	url: string | null;
@@ -15,7 +15,8 @@ type StripeEvent = {
 	data: { object: CheckoutSession & { refunded?: boolean } };
 };
 class StripeGateway {
-	constructor(private key: string) {}
+	private key: string;
+	constructor(key: string) {this.key=key;}
 	async create(data: Record<string, unknown>, id: string): Promise<CheckoutSession> {
 		const form = new URLSearchParams();
 		function add(prefix: string, value: unknown) {
@@ -61,7 +62,7 @@ async function verifyEvent(body: string, signature: string, secret: string): Pro
 	return JSON.parse(body);
 }
 import { error, json, type RequestEvent } from '@sveltejs/kit';
-import { database } from './db';
+import { database } from './db.ts';
 function client(event: RequestEvent) {
 	const key = event.platform?.env.STRIPE_SECRET_KEY;
 	if (!key) error(503, 'Payments are not connected yet. Free planning and comments are available.');

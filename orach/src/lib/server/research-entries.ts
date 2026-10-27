@@ -62,6 +62,20 @@ export function researchEntries(input: unknown, section: Section, city: string):
 		});
 	}
 	if (records.length) return records;
+ // Preserve explicitly labelled Answer records as separate research drafts.
+ // A fee mentioned in amenities is never treated as the room's nightly price.
+ if(typeof value.answer==='string' && ['stay','neighbourhood'].includes(section)){
+  const blocks=value.answer.split(/(?:^|\n)(?=NAME:\s*)/).filter(block=>block.startsWith('NAME:'));
+  for(const [index,block] of blocks.entries()){
+   const name=block.match(/^NAME:\s*(.+)/)?.[1]?.trim();
+   const cited=[...block.matchAll(/\[(\d+)\]/g)].map(match=>sources[Number(match[1])-1]);
+   const source=cited.map(row=>validUrl(row?.url)).find(Boolean);
+   if(!name||!source)continue;
+   const description=block.match(/(?:CHARACTER|SUITS|ACCOMMODATION TYPE):\s*(.+)/)?.[1]||'Collected place details; confirm current conditions with the linked source.';
+   records.push({id:`${city}-${section}-answer-${index}`,section,name,description,detail:block,amount:null,unit:'',source,evidence:'Provider answer with source citations; not independently confirmed',status:'Research draft'});
+  }
+ }
+ if(records.length)return records;
 	const seen = new Set<string>();
 	for (const [index, row] of sources.entries()) {
 		const source = validUrl(row.url);
@@ -75,7 +89,7 @@ export function researchEntries(input: unknown, section: Section, city: string):
 		const passage =
 			typeof row.content === 'string'
 				? row.content
-				: typeof row.description === 'string'
+				: typeof row.markdown==='string'?row.markdown:typeof row.text==='string'?row.text:typeof row.raw_content==='string'?row.raw_content:typeof row.description === 'string'
 					? row.description
 					: highlights;
 		const quote = passage.split(/\s+/).filter(Boolean).slice(0, 25).join(' ');
