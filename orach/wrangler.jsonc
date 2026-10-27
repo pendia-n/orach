@@ -5,7 +5,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "orach",
-	"main": "worker.js",
+	"main": "worker-entry.js",
 	"compatibility_date": "2026-10-06",
 	"compatibility_flags": ["nodejs_als"],
 	"assets": {

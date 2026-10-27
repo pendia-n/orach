@@ -1,8 +1,9 @@
+import {stayAccess} from '#lib/server/access';
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { database } from '#lib/server/db';
 import { session, requireUser, hash, equal, issue, limit, passwordValid } from '#lib/server/auth';
 import { cities, sections } from '#lib/catalog';
-import { checkout, webhook } from '#lib/server/payments';
+import { checkout, webhook, billingPortal } from '#lib/server/payments';
 const validSection = (s: string) => sections.some((x) => x.id === s);
 async function knownCity(event: RequestEvent, slug: unknown) {
 	if (typeof slug !== 'string') return false;
@@ -67,12 +68,7 @@ export async function GET(event: RequestEvent) {
 		const u = await requireUser(event);
 		const id = event.url.searchParams.get('stay');
 		const db = database(event.platform);
-		const ent = await db
-			.prepare(
-				"SELECT purchase_id FROM entitlements WHERE user_id=? AND stay_id=? AND active=1 AND expires_at>datetime('now')"
-			)
-			.bind(u.id, id)
-			.first();
+		const ent = await stayAccess(database(event.platform),u.id,id);
 		if (!ent) error(403, 'A stay pass is required.');
 		if (path === 'scenarios') {
 			const r = await db
@@ -108,12 +104,7 @@ export async function GET(event: RequestEvent) {
 	if (path === 'entitlement') {
 		const u = await requireUser(event);
 		const id = event.url.searchParams.get('stay');
-		const ent = await database(event.platform)
-			.prepare(
-				"SELECT purchase_id FROM entitlements WHERE user_id=? AND stay_id=? AND active=1 AND expires_at>datetime('now')"
-			)
-			.bind(u.id, id)
-			.first();
+		const ent = await stayAccess(database(event.platform),u.id,id);
 		return json({ active: !!ent });
 	}
 	error(404, 'Not found.');
@@ -395,12 +386,7 @@ export async function POST(event: RequestEvent) {
 			name = text(o, 'name');
 		if (!name || name.length > 60 || !o.stay || JSON.stringify(o.stay).length > 20000)
 			error(400, 'Check the scenario details.');
-		const ent = await db
-			.prepare(
-				"SELECT purchase_id FROM entitlements WHERE user_id=? AND stay_id=? AND active=1 AND expires_at>datetime('now')"
-			)
-			.bind(u.id, stayId)
-			.first();
+		const ent = await stayAccess(database(event.platform),u.id,stayId);
 		if (!ent) error(403, 'A stay pass is required.');
 		await db
 			.prepare(
@@ -416,6 +402,7 @@ export async function POST(event: RequestEvent) {
 			scenarios: result.results.map((r) => ({ name: r.name, data: JSON.parse(r.data) }))
 		});
 	}
+	if (path === 'billing-portal') return billingPortal(event,u.id);
 	if (path === 'checkout') return checkout(event, u.id, text(o, 'stayId'));
 	error(404, 'Not found.');
 }

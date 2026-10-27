@@ -2,12 +2,12 @@
 	import Icon from '#lib/components/Icon.svelte';
 </script>
 
-<svelte:head><title>One stay, one pass — Orach pricing</title></svelte:head>
+<svelte:head><title>Orach Plus — Orach pricing</title></svelte:head>
 <div class="container">
 	<div class="page-heading">
 		<div>
 			<p class="eyebrow">Keep it simple</p>
-			<h1>A free start.<br />One optional stay pass.</h1>
+			<h1>A free start.<br />One optional membership.</h1>
 			<p>
 				Get useful planning tools before deciding to pay. Your profile, city guides and community
 				notes stay free.
@@ -32,37 +32,33 @@
 			>
 		</section>
 		<section class="panel paid">
-			<span class="badge">One destination · one stay</span>
-			<h2>The stay pass</h2>
-			<div class="price">US$7.99<span>one time</span></div>
+			<span class="badge">Monthly membership</span>
+			<h2>Orach Plus</h2>
+			<div class="price">US$7.99<span>per month</span></div>
 			<p>For comparing possibilities and taking your plan with you.</p>
 			<ul>
 				<li>Everything in your free account</li>
-				<li>Three saved alternative budget scenarios</li>
+				<li>Three saved budget versions per stay</li>
 				<li>Detailed comparison of your own home and destination allowances</li>
-				<li>Download your stay summary</li>
-				<li>Up to 90 nights; access through seven days after departure</li>
+				<li>Print your trip summary or save it as PDF</li>
+				<li>Commission research for missing cities, within shared research limits</li>
 			</ul>
 			<a class="button full" href="/plan">Build your stay first<Icon name="arrow" size={17} /></a
 			><small
-				>No subscription or automatic renewal. Hosted Stripe Checkout supports eligible fiat and
+				>Renews monthly until cancelled. Manage or cancel through your billing portal. Stripe Checkout supports eligible fiat and
 				USDC methods when payments are configured.</small
 			>
 		</section>
 	</div>
 	<div class="notice" style="max-width:940px;margin:25px auto">
 		Launch price proposal: US$7.99. Payments remain unavailable until the checkout and webhook are
-		configured. Data coverage is shown per city; a pass does not promise a complete or
+		configured. Data coverage is shown per city; membership does not promise a complete or
 		live-confirmed city profile.
 	</div>
 	<div class="prose">
 		<h2>Before you buy</h2>
 		<p>
-			The pass is tied to the destination and dates you save. Stays must be 1–90 nights and start
-			within 180 days. Destination and dates are locked once checkout starts. You keep your own
-			historical records after access expires. Prices and recommendations can change; operator
-			booking terms apply separately. A seven-day satisfaction refund is offered, with applicable
-			consumer rights preserved. See our policies for details.
+			Membership unlocks paid features across your saved stays while active. City profiles and community contributions remain free. Cancelling stops renewal; access continues through the paid period. Your estimates are not live quotes. New-city research is subject to shared provider budgets and may be incomplete. See our policies for refund details.
 		</p>
 	</div>
 </div>

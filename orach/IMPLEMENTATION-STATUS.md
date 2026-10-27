@@ -7,3 +7,6 @@ Current release work adds database-backed city image covers and galleries, fixes
 Still unfinished: subscription checkout and webhook entitlement synchronization; useful printable trip summaries; durable unknown-city background research; comprehensive evidence-grounded recommendation normalization; live end-to-end release verification. The existing one-time stay pass is not a subscription product. Do not claim subscription access is operational.
 
 Scheduling is restricted to active subscriptions, top ten recorded cities over seven days, twice monthly. No active subscription means no scheduled provider calls.
+
+## Further implementation (not yet live verified)
+Monthly inline Checkout pricing, subscription lifecycle synchronization, active-member access across stays, legacy stay-pass compatibility, customer billing portal, and printable HTML trip summary are implemented. Existing profiles remain free; new-city overview is free while commissioning uncached sections requires membership. Scheduler moved to worker-entry.js so the adapter cannot overwrite it on build. Eleven unit tests pass; live Stripe transaction/webhook verification still requires configuration described in BILLING-SETUP.md. Durable discovery and deeper evidence normalization remain unfinished.

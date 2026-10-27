@@ -1,3 +1,4 @@
+import {subscriber} from './access';
 import { equal } from './auth';
 type CheckoutSession = {
 	id: string;
@@ -73,55 +74,30 @@ export async function checkout(event: RequestEvent, userId: string, stayId: stri
 	const price = Number(env.ORACH_PASS_PRICE_CENTS);
 	if (!Number.isInteger(price) || price < 100) error(503, 'The stay-pass price is not configured.');
 	const db = database(event.platform);
-	const stay = await db
-		.prepare('SELECT data FROM stays WHERE id=? AND user_id=?')
-		.bind(stayId, userId)
-		.first<{ data: string }>();
-	if (!stay) error(404, 'Save a stay before purchasing.');
-	const data = JSON.parse(stay.data);
-	const start = Date.parse(data.arrival),
-		end = Date.parse(data.departure);
-	const nights = (end - start) / 86400000;
-	if (
-		!Number.isFinite(nights) ||
-		nights < 1 ||
-		nights > 90 ||
-		start < Date.now() - 86400000 ||
-		start > Date.now() + 180 * 86400000
-	)
-		error(400, 'Choose a future stay of 1–90 nights starting within 180 days.');
-	const active = await db
-		.prepare(
-			`SELECT purchase_id FROM entitlements WHERE user_id=? AND stay_id=? AND active=1 AND expires_at>datetime('now')`
-		)
-		.bind(userId, stayId)
-		.first();
-	if (active) error(409, 'This stay already has a pass.');
+	if(await subscriber(db,userId)) error(409,'Your subscription is already active.');
 	const id = crypto.randomUUID();
-	await db
-		.prepare('INSERT INTO purchases(id,user_id,stay_id,amount) VALUES(?,?,?,?)')
-		.bind(id, userId, stayId, price)
-		.run();
 	const stripe = client(event);
 	const result = await stripe.create(
 		{
-			mode: 'payment',
+			mode: 'subscription',
 			line_items: [
 				{
 					price_data: {
 						currency: 'usd',
 						unit_amount: price,
+						recurring: {interval:'month'},
 						product_data: {
-							name: 'Orach destination-stay pass',
+							name: 'Orach Plus',
 							description:
-								'Saved scenarios, detailed personal comparisons and export for one stay. No renewal.'
+								'Monthly membership: saved budget versions, printable trip summaries and new-city research. Renews monthly until cancelled.'
 						}
 					},
 					quantity: 1
 				}
 			],
-			client_reference_id: id,
-			metadata: { purchase_id: id },
+			client_reference_id: userId,
+			metadata: { user_id: userId },
+			subscription_data: {metadata:{user_id:userId}},
 			integration_identifier:
 				'orach_' +
 				Array.from(crypto.getRandomValues(new Uint8Array(8)), (x) =>
@@ -132,7 +108,6 @@ export async function checkout(event: RequestEvent, userId: string, stayId: stri
 		},
 		id
 	);
-	await db.prepare('UPDATE purchases SET stripe_session=? WHERE id=?').bind(result.id, id).run();
 	return json({ url: result.url });
 }
 export async function webhook(event: RequestEvent) {
@@ -147,6 +122,9 @@ export async function webhook(event: RequestEvent) {
 		error(400, 'Invalid webhook signature.');
 	}
 	const db = database(event.platform);
+	if (stripeEvent.type.startsWith('customer.subscription.')) {
+		await syncSubscription(event, stripeEvent.data.object as unknown as Subscription);
+	}
 	if (await db.prepare('SELECT id FROM stripe_events WHERE id=?').bind(stripeEvent.id).first())
 		return json({ received: true });
 	if (
@@ -204,4 +182,31 @@ export async function webhook(event: RequestEvent) {
 	}
 	await db.prepare('INSERT OR IGNORE INTO stripe_events(id) VALUES(?)').bind(stripeEvent.id).run();
 	return json({ received: true });
+}
+
+type Subscription={id:string;status:string;metadata?:{user_id?:string};items?:{data:{current_period_end?:number}[]};current_period_end?:number};
+async function syncSubscription(event:RequestEvent, incoming:Subscription){
+ // Fetch authoritative Stripe state so delayed webhook delivery cannot restore cancelled access.
+ const response=await fetch('https://api.stripe.com/v1/subscriptions/'+encodeURIComponent(incoming.id),{headers:{Authorization:'Bearer '+event.platform!.env.STRIPE_SECRET_KEY,'Stripe-Version':'2026-08-26.dahlia'},signal:AbortSignal.timeout(15000)});
+ if(!response.ok)error(502,'Subscription state could not be synchronized.');
+ const sub=await response.json() as Subscription;
+ const userId=sub.metadata?.user_id;
+ if(!userId)return;
+ const db=database(event.platform);
+ if(!await db.prepare('SELECT id FROM users WHERE id=?').bind(userId).first())return;
+ const end=Math.max(0,...(sub.items?.data||[]).map(item=>item.current_period_end||0),sub.current_period_end||0);
+ await db.prepare('INSERT INTO subscriptions(id,user_id,status,current_period_end) VALUES(?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status,current_period_end=excluded.current_period_end,updated_at=CURRENT_TIMESTAMP').bind(sub.id,userId,sub.status,end).run();
+}
+
+export async function billingPortal(event:RequestEvent,userId:string){
+ const env=event.platform!.env,db=database(event.platform);
+ const record=await db.prepare('SELECT id FROM subscriptions WHERE user_id=? ORDER BY updated_at DESC LIMIT 1').bind(userId).first<{id:string}>();
+ if(!record)error(404,'No subscription is linked to this account.');
+ const headers={Authorization:'Bearer '+env.STRIPE_SECRET_KEY,'Stripe-Version':'2026-08-26.dahlia'};
+ const response=await fetch('https://api.stripe.com/v1/subscriptions/'+encodeURIComponent(record.id),{headers});
+ if(!response.ok)error(502,'Could not retrieve your billing account.');
+ const sub=await response.json() as {customer:string};
+ const portal=await fetch('https://api.stripe.com/v1/billing_portal/sessions',{method:'POST',headers:{...headers,'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({customer:sub.customer,return_url:env.ORACH_PUBLIC_ORIGIN+'/plan'})});
+ if(!portal.ok)error(503,'Billing management is not configured yet.');
+ return json(await portal.json());
 }

@@ -1,3 +1,4 @@
+import {subscriber} from '#lib/server/access';
 import { writeResearch } from '#lib/server/research-cache';
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { requireUser, limit } from '#lib/server/auth';
@@ -57,6 +58,7 @@ export async function POST(event: RequestEvent) {
 			result: previous.result ? JSON.parse(previous.result) : null,
 			error: previous.error
 		});
+	if(section !== 'overview' && !await subscriber(db,user.id)) error(403,'Orach Plus is required to commission new city sections. Existing profiles remain free.');
 	await limit(event, 'city-discovery:' + user.id, 32);
 	if (
 		section !== 'overview' &&

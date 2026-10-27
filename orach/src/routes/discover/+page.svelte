@@ -67,7 +67,7 @@
 <div class="container" style="max-width:800px;padding-top:40px;padding-bottom:80px">
 	<p class="eyebrow">Your next local chapter</p>
 	<h1>Find your city.</h1>
-	<p>Start with a short overview while we collect food, experiences and practical details.</p>
+	<p>Get a short overview free. Orach Plus members can commission all eight city sections, subject to research allowances. Existing collected profiles remain free to browse.</p>
 	{#if data.user}
 		<form
 			onsubmit={(event) => {

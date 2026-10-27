@@ -105,6 +105,7 @@
 			busy = false;
 		}
 	}
+	async function manageBilling(){try{const r=await api('billing-portal',{});if(r.url)location.href=r.url;}catch(e){message=(e as Error).message;}}
 	async function purchase() {
 		if (!id) {
 			message = 'Save your stay to your free account first.';
@@ -144,7 +145,7 @@
 				go.
 			</p>
 		</div>
-		<span class="badge">{paid ? 'Stay pass active' : 'Free stay planner'}</span>
+		<span class="badge">{paid ? 'Membership active' : 'Free stay planner'}</span>
 	</div>
 	{#if page.url.searchParams.get('payment') === 'processing'}<p
 			class="notice info"
@@ -320,9 +321,9 @@
 				>
 			</div>
 			<div class="panel pass-card">
-				<span class="badge">{paid ? 'Your stay pass' : 'One stay. A little more clarity.'}</span>
-				<h3>{paid ? 'Compare your own routine.' : 'Go further for US$7.99.'}</h3>
-				{#if paid}<div class="field">
+				<span class="badge">{paid ? 'Your membership' : 'Orach Plus'}</span>
+				<h3>{paid ? 'Compare your own routine.' : 'Orach Plus · US$7.99/month.'}</h3>
+				{#if paid}<button class="button secondary" onclick={manageBilling}>Manage subscription / cancel</button><div class="field">
 						<label for="home-daily">Home food & transport per person/day ({currency})</label><input
 							id="home-daily"
 							type="number"
@@ -338,7 +339,7 @@
 							accommodation and extras.
 						</p>{/if}
 					<div class="field" style="margin-top:18px">
-						<label for="scenario">Save an alternative scenario</label><input
+						<label for="scenario">Save a budget version</label><input
 							id="scenario"
 							bind:value={scenarioName}
 							maxlength="60"
@@ -346,14 +347,13 @@
 						/>
 					</div>
 					<button class="button secondary full" onclick={saveScenario}
-						>Save scenario ({scenarios.length}/3)</button
+						>Save budget version ({scenarios.length}/3)</button
 					>{#each scenarios as s}<button class="scenario" onclick={() => apply(s.data)}
 							>{s.name}<Icon name="arrow" size={15} /></button
-						>{/each}<a class="button full" style="margin-top:15px" href={'/api/export?stay=' + id}
-						><Icon name="download" size={16} />Export this stay</a
+						>{/each}<a class="button full" style="margin-top:15px" href={'/api/trip-summary?stay=' + id}
+						><Icon name="download" size={16} />Printable trip summary / PDF</a
 					>{:else}<p>
-						Three saved scenarios, a detailed comparison of your own allowances, and a downloadable
-						stay summary. One destination stay, up to 90 nights. No renewal.
+						Three saved budget versions per stay, comparisons of your own allowances, printable trip summaries and new-city research. US$7.99 per month, renewing until cancelled.
 					</p>
 					<button
 						class="button full"
@@ -363,7 +363,7 @@
 							? 'Sign in to purchase'
 							: !data.billingAvailable
 								? 'Payments opening soon'
-								: 'Get the stay pass'}</button
+								: 'Subscribe to Orach Plus'}</button
 					><small
 						>USD checkout · fiat and USDC where eligible. No payment is taken while checkout is
 						unavailable.</small

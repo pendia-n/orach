@@ -17,14 +17,13 @@
 	<p>
 		Comments and likes are free for signed-in users. Share first-hand, dated experiences; disclose
 		any business relationship. Do not post personal information, harassment, illegal content,
-		misleading promotions or dangerous instructions. Five unique likes make the highest-ranked
-		qualifying note the default community highlight in its section. Self-likes are blocked. A
+		misleading promotions or dangerous instructions. Five unique non-author likes qualify a note as a labelled community information card in its section. Self-likes are blocked. A
 		highlight remains community content and does not replace sourced factual records. Use Report to
 		flag a concern.
 	</p>
 	<h2>Payments and refunds</h2>
 	<p>
-		The optional destination-stay pass is charged once in USD. There is no automatic renewal. Stripe
+		Orach Plus is US$7.99 per month in USD and renews until cancelled. Manage or cancel through the billing portal. Access continues through the paid period after cancellation. Historical one-time stay passes retain their original terms. Stripe
 		handles payment details; Orach does not store card or wallet credentials. Eligible fiat and USDC
 		methods are determined by Stripe and the merchant account. Request a satisfaction refund within
 		seven days of purchase through the merchant contact shown on your Stripe receipt. Duplicate
