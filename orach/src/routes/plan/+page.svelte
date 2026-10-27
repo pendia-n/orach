@@ -22,7 +22,7 @@
 		paid = $state(false),
 		scenarioName = $state(''),
 		scenarios = $state<{ name: string; data: Record<string, unknown> }[]>([]);
-	const destination = $derived(cities.find((c) => c.slug === city)!);
+	const destination = $derived(data.destinations.find((c) => c.slug === city)!);
 	const nights = $derived(
 		arrival && departure ? Math.round((Date.parse(departure) - Date.parse(arrival)) / 86400000) : 0
 	);
@@ -69,7 +69,7 @@
 		const local = readLocal<Record<string, unknown> | null>('orach-stay', null);
 		if (local) apply(local);
 		if (page.url.searchParams.get('city')) city = page.url.searchParams.get('city')!;
-		if (!cities.some((c) => c.slug === city)) city = 'manchester';
+		if (!data.destinations.some((c) => c.slug === city)) city = 'manchester';
 		if (data.user) {
 			try {
 				const result = await api('stays');
@@ -173,7 +173,7 @@
 						scenarios = [];
 						rate = 0;
 					}}
-					>{#each cities as c}<option value={c.slug}>{c.name}, {c.country}</option>{/each}</select
+					>{#each data.destinations as c}<option value={c.slug}>{c.name}, {c.country}</option>{/each}</select
 				>
 			</div>
 			<div class="form-grid">

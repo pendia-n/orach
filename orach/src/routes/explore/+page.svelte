@@ -9,6 +9,7 @@
 		region = $state('All destinations');
 	const regions = [
 		'All destinations',
+		'New destinations',
 		'Asia',
 		'Europe',
 		'Americas',
@@ -17,7 +18,7 @@
 		'Middle East'
 	];
 	const filtered = $derived(
-		cities.filter(
+		data.destinations.filter(
 			(c) =>
 				(region === 'All destinations' || c.region === region) &&
 				(c.name + ' ' + c.country).toLowerCase().includes(query.toLowerCase())

@@ -1,6 +1,7 @@
 declare global {
 	interface Env {
 		DB: D1Database;
+		CITY_RESEARCH_QUEUE?: Queue<import("./lib/server/discovery-task").CityTask>;
 		ORACH_JWT_SECRET?: string;
 		STRIPE_SECRET_KEY?: string;
 		STRIPE_WEBHOOK_SECRET?: string;

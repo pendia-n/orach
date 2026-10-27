@@ -39,22 +39,15 @@
 						: 'The city overview is unavailable. Please try again later.';
 				return;
 			}
-			await Promise.allSettled(
-				sections.map(async (section) => {
-					states[section.id] = 'Researching';
-					try {
-						const response = await api('discovery', { ...input, section: section.id });
-						states[section.id] =
-							response.status === 'needs_review'
-								? 'Research collected'
-								: response.status === 'running'
-									? 'In progress'
-									: 'Unavailable';
-					} catch {
-						states[section.id] = 'Could not complete';
-					}
-				})
-			);
+			if(initial.queued){
+ message='Your city research is queued and will continue if you leave. Open the profile to see saved results.';
+ for(let attempt=0;attempt<30;attempt++){
+  const progress=await api('discovery?city='+encodeURIComponent(slug));
+  for(const row of progress.sections)states[row.section]=row.status==='needs_review'?'Research collected':row.status==='failed'?'Could not complete':'In progress';
+  if(progress.sections.filter((row:{section:string;status:string})=>row.section!=='overview'&&['needs_review','failed'].includes(row.status)).length===8)break;
+  await new Promise(resolve=>setTimeout(resolve,2000));
+ }
+ }else message='Your free overview is saved. Orach Plus can commission all eight sections.';
 		} catch (error) {
 			message = error instanceof Error ? error.message : 'Research is unavailable.';
 		} finally {

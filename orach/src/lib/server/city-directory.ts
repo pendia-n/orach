@@ -1,0 +1,10 @@
+import {cities,type City} from '../catalog.ts';
+export async function cityDirectory(db:D1Database|undefined):Promise<City[]>{
+ if(!db)return cities;
+ const rows=await db.prepare("SELECT c.slug,c.name,c.country,r.response_json FROM cities c LEFT JOIN section_research r ON r.city_slug=c.slug AND r.section='overview' WHERE c.status IN ('draft','published')").all<{slug:string;name:string;country:string;response_json:string|null}>();
+ const known=new Set(cities.map(c=>c.slug));
+ return [...cities,...rows.results.filter(r=>!known.has(r.slug)).map(r=>{
+ let currency='XXX';try{const data=JSON.parse(r.response_json||'{}');currency=(data.preview||data).city?.currency||'XXX';}catch{}
+ return {slug:r.slug,name:r.name,country:r.country,currency,region:'New destinations',color:'#c5d6c0',status:'draft'} as City;
+ })];
+}

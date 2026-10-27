@@ -24,6 +24,7 @@
 		"ORACH_PUBLIC_ORIGIN": "https://orach.pendia-community.workers.dev",
 		"ORACH_PASS_PRICE_CENTS": "799"
 	},
+	"queues": {"producers":[{"binding":"CITY_RESEARCH_QUEUE","queue":"orach-city-research"}],"consumers":[{"queue":"orach-city-research","max_batch_size":8,"max_batch_timeout":1,"max_retries":2}]},
 	"triggers": { "crons": ["0 2 1,15 * *"] },
 	"observability": {
 		"enabled": true
