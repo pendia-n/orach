@@ -98,11 +98,6 @@ export async function checkout(event: RequestEvent, userId: string, stayId: stri
 			client_reference_id: userId,
 			metadata: { user_id: userId },
 			subscription_data: {metadata:{user_id:userId}},
-			integration_identifier:
-				'orach_' +
-				Array.from(crypto.getRandomValues(new Uint8Array(8)), (x) =>
-					String.fromCharCode(97 + (x % 26))
-				).join(''),
 			success_url: env.ORACH_PUBLIC_ORIGIN + '/plan?payment=processing',
 			cancel_url: env.ORACH_PUBLIC_ORIGIN + '/plan?payment=cancelled'
 		},
