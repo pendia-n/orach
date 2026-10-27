@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { cities, money } from '#lib/catalog';
+	import { cities, money, type City } from '#lib/catalog';
 	import Icon from '#lib/components/Icon.svelte';
 	import { page } from '$app/state';
 	import { api, readLocal } from '#lib/client';
@@ -22,7 +22,24 @@
 		paid = $state(false),
 		scenarioName = $state(''),
 		scenarios = $state<{ name: string; data: Record<string, unknown> }[]>([]);
-	const destination = $derived(data.destinations.find((c) => c.slug === city)!);
+	let addingCity=$state(false),newCity=$state(''),newCountry=$state(''),newCurrency=$state(''),addingBusy=$state(false),addMessage=$state('');
+ const addedCities=$state<City[]>([]);
+ const destinations=$derived([...data.destinations,...addedCities]);
+ const inferredCurrency=$derived(destinations.find(c=>c.country.toLowerCase()===newCountry.trim().toLowerCase())?.currency||'');
+ async function addCity(){
+  addingBusy=true;addMessage='';
+  try{
+   const localCurrency=inferredCurrency||newCurrency.trim().toUpperCase();
+   if(!newCity.trim()||!newCountry.trim())throw Error('Enter the city and country.');
+   if(!/^[A-Z]{3}$/.test(localCurrency))throw Error('Confirm the local currency for this country.');
+   const result=await api('discovery',{city:newCity.trim(),country:newCountry.trim(),currency:localCurrency});
+   if(!result.existing&&result.status!=='needs_review')throw Error('The city could not be added yet. Please try again.');
+   if(!destinations.some(c=>c.slug===result.slug))addedCities.push({slug:result.slug,name:newCity.trim(),country:newCountry.trim(),currency:localCurrency,region:'New destinations',color:'#c5d6c0',status:'draft'});
+   city=result.slug;id='';scenarios=[];rate=0;paid=false;addingCity=false;
+   message=result.queued?'City selected. Its eight sections are being researched in the background.':'City selected. You can plan your stay now; its saved profile is free to browse.';
+  }catch(e){addMessage=(e as Error).message;}finally{addingBusy=false;}
+ }
+ const destination = $derived(destinations.find((c) => c.slug === city)!);
 	const nights = $derived(
 		arrival && departure ? Math.round((Date.parse(departure) - Date.parse(arrival)) / 86400000) : 0
 	);
@@ -173,9 +190,23 @@
 						scenarios = [];
 						rate = 0;
 					}}
-					>{#each data.destinations as c}<option value={c.slug}>{c.name}, {c.country}</option>{/each}</select
+					>{#each destinations as c}<option value={c.slug}>{c.name}, {c.country}</option>{/each}</select
 				>
 			</div>
+ <button type="button" class="button secondary" onclick={()=>addingCity=!addingCity}>Can't find your city? Add another city</button>
+ {#if addingCity}<section class="panel" style="margin:16px 0" aria-label="Add a destination">
+ <h3>Add your destination</h3><p>Your dates and budget inputs stay here.</p>
+ {#if data.user}
+ <label class="label" for="add-city">City</label><input id="add-city" bind:value={newCity} maxlength="80" />
+ <label class="label" for="add-country">Country or territory</label><input id="add-country" bind:value={newCountry} list="destination-countries" maxlength="80" />
+ <datalist id="destination-countries">{#each [...new Set(destinations.map(c=>c.country))] as country}<option value={country}></option>{/each}</datalist>
+ {#if inferredCurrency}<p class="small-text">Local currency: {inferredCurrency}</p>{:else}<label class="label" for="add-currency">Confirm local currency</label><input id="add-currency" bind:value={newCurrency} maxlength="3" placeholder="Three-letter currency code" />{/if}
+ <p class="small-text">Free accounts get a saved overview. Plus members also commission all eight sections, within research allowances.</p>
+ <button type="button" class="button" disabled={addingBusy} onclick={addCity}>{addingBusy?'Adding your city…':'Add and select city'}</button>
+ {#if addMessage}<p role="status">{addMessage}</p>{/if}
+ {:else}<a href="/sign-up" class="button">Sign up free to add a city</a>{/if}
+ </section>{/if}
+
 			<div class="form-grid">
 				<div class="field">
 					<label for="arrival">Arrival</label><input
