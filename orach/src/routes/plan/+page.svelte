@@ -264,7 +264,7 @@
 					<label for="currency">Your familiar currency</label><input
 						id="currency"
 						bind:value={currency}
-						pattern="[A-Z]{3}"
+						pattern={'[A-Z]{3}'}
 						maxlength="3"
 					/>
 				</div>

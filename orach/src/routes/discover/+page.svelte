@@ -89,7 +89,7 @@
 			<label class="label" for="new-currency">Local currency code</label><input
 				id="new-currency"
 				bind:value={currency}
-				pattern="[A-Z]{3}"
+				pattern={'[A-Z]{3}'}
 				maxlength="3"
 				required
 				disabled={busy}
