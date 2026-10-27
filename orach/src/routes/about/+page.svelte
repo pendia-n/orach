@@ -15,7 +15,7 @@
 	</p>
 	<h2>Useful discoveries, honest limits</h2>
 	<p>
-		We’re building a collection across 55 selected destinations. Manchester currently has a research
+		We’re building a collection across 32 launch destinations. Manchester currently has a research
 		preview. Other profiles are awaiting research; we show that clearly. Source links and conditions
 		matter more than a claim that something is “the best.”
 	</p>

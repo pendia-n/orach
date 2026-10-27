@@ -1,3 +1,4 @@
+import { writeResearch } from '#lib/server/research-cache';
 import { json, error, type RequestEvent } from '@sveltejs/kit';
 import { requireUser, limit } from '#lib/server/auth';
 import { database } from '#lib/server/db';
@@ -125,17 +126,10 @@ export async function POST(event: RequestEvent) {
 			.prepare("UPDATE research_jobs SET status='needs_review',result=? WHERE id=?")
 			.bind(serialized, id)
 			.run();
-		await db
-			.prepare(
-				'INSERT INTO section_research(city_slug,section,provider_format,response_json) VALUES(?,?,?,?) ON CONFLICT(city_slug,section) DO UPDATE SET response_json=excluded.response_json,imported_at=CURRENT_TIMESTAMP'
-			)
-			.bind(
-				slug,
-				section,
-				request.provider,
-				JSON.stringify({ city: { name, country, currency }, response: result })
-			)
-			.run();
+		await writeResearch(db, slug, section, request.provider, {
+			city: { name, country, currency },
+			response: result
+		});
 		return json({ slug, status: 'needs_review', result });
 	} catch (cause) {
 		const message = cause instanceof Error ? cause.message : 'Research failed';

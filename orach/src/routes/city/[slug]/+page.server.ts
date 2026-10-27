@@ -1,3 +1,5 @@
+import { researchEntries } from '#lib/server/research-entries';
+import { sections } from '#lib/catalog';
 import { readResearch } from '#lib/server/research-cache';
 import { researchDisplay, type ResearchDisplay } from '#lib/server/research-display';
 import { error } from '@sveltejs/kit';
@@ -11,12 +13,14 @@ export const load = async ({ params, platform }: import('./$types').PageServerLo
 			.bind(params.slug)
 			.first<{ slug: string; name: string; country: string; response_json: string | null }>();
 		if (row) {
-			const metadata = row.response_json ? JSON.parse(row.response_json) : {};
+			const metadata = (await readResearch(platform.env.DB, row.slug, 'overview')) as {
+				city?: { currency?: string };
+			} | null;
 			city = {
 				slug: row.slug,
 				name: row.name,
 				country: row.country,
-				currency: metadata.city?.currency || 'XXX',
+				currency: metadata?.city?.currency || 'XXX',
 				region: '',
 				color: '#c5d6c0',
 				status: 'draft'
@@ -24,7 +28,7 @@ export const load = async ({ params, platform }: import('./$types').PageServerLo
 		}
 	}
 	if (!city) error(404, 'This destination is not in the collection yet.');
-	let entries = city.slug === 'manchester' ? manchester : [];
+	let entries = city.slug === 'manchester' ? [...manchester] : [];
 	if (platform?.env.DB) {
 		const rows = await platform.env.DB.prepare(
 			'SELECT data FROM city_entries WHERE city_slug=? AND published=1'
@@ -43,9 +47,23 @@ export const load = async ({ params, platform }: import('./$types').PageServerLo
 		await Promise.all(
 			available.results.map(async ({ section }) => {
 				const raw = await readResearch(platform.env.DB, city.slug, section);
-				if (raw) research[section] = researchDisplay(raw);
+				if (raw) {
+					research[section] = researchDisplay(raw);
+					if (
+						sections.some((item) => item.id === section) &&
+						!entries.some((entry) => entry.section === section)
+					)
+						entries.push(...researchEntries(raw, section as Entry['section'], city!.slug));
+				}
 			})
 		);
 	}
-	return { city, entries, research };
+	return {
+		city: {
+			...city,
+			status: entries.length || Object.keys(research).length ? ('draft' as const) : city.status
+		},
+		entries,
+		research
+	};
 };

@@ -78,7 +78,7 @@
 				<p class="eyebrow">A world of possibilities</p>
 				<h2>Where would you feel at home?</h2>
 			</div>
-			<a href="/explore" class="text-link">All 55 destinations<Icon name="arrow" size={17} /></a>
+			<a href="/explore" class="text-link">All 32 destinations<Icon name="arrow" size={17} /></a>
 		</div>
 		<div class="grid-four">
 			{#each featured as city, i}<a class="city-card" href={'/city/' + city.slug}

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { api } from '#lib/client';
+	import { page } from '$app/state';
 	import { sections } from '#lib/catalog';
 	let { data } = $props();
-	let city = $state(''),
+	let city = $state(page.url.searchParams.get('city') || ''),
 		country = $state(''),
 		currency = $state('EUR'),
 		summary = $state(''),

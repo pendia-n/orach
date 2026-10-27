@@ -1,3 +1,4 @@
+import { writeResearch } from '../src/lib/server/research-cache.ts';
 import { cities } from '../src/lib/catalog.ts';
 interface ResearchEnv {
 	DB: D1Database;
@@ -186,6 +187,13 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 				);
 				if (!response.ok) throw new Error('Provider HTTP ' + response.status);
 				const result = await response.json();
+				await writeResearch(
+					env.DB,
+					city.slug,
+					section,
+					provider === 'exa' ? (searchExa ? 'exa_search' : 'exa_answer') : provider + '_search',
+					result
+				);
 				const actual =
 					provider === 'exa'
 						? Number((result as { costDollars?: { total: number } }).costDollars?.total ?? 0.02)

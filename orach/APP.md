@@ -4,7 +4,7 @@ Orach helps temporary visitors understand everyday life somewhere new: food, dri
 
 ## What is implemented
 
-- 55 chosen destinations; Manchester has explicitly labelled source excerpts. Other cities are awaiting research. No fabricated popularity, current prices or completed research.
+- 32 launch destinations; Manchester has explicitly labelled source excerpts. Other cities are awaiting research. No fabricated popularity, current prices or completed research.
 - Free username/password signup, login, passcode recovery and security settings. Recovery passcodes are eight lowercase letters/numbers and stored with PBKDF2. Passwords use PBKDF2-SHA256 with random salts. Sessions use HS256 JWTs and Secure, HttpOnly, SameSite=Lax cookies for **eight days**. JWT signing secret is generated with `openssl rand -hex 32`, persisted in ignored `.env`, and mirrored to ignored `.dev.vars` for local development. Credential values must never be displayed.
 - Home profile, device drafts, D1 saved stays and basic budgeting are free. User-entered exchange rates are explicitly not live rates.
 - Free section comments and likes. The leading note with at least **five unique non-author account likes** is the default community highlight. It stays attributed and is not a verified price or safety claim. Report submissions are stored in `comment_reports`; operator review uses D1. There is no automatic content moderation service or admin dashboard yet.

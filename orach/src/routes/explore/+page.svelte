@@ -27,7 +27,7 @@
 	}
 </script>
 
-<svelte:head><title>Explore 55 destinations — Orach</title></svelte:head>
+<svelte:head><title>Explore 32 destinations — Orach</title></svelte:head>
 <div class="container">
 	<a class="text-link" href="/discover">Find a city beyond the collection →</a>
 	<div class="page-heading">
@@ -36,7 +36,7 @@
 			<h1>Go somewhere.<br />Find your kind of life.</h1>
 			<p>Food, things to make and places to wander. Start with a city, then make it yours.</p>
 		</div>
-		<span class="badge">55 destinations on our list</span>
+		<span class="badge">32 launch destinations</span>
 	</div>
 	<div class="explore-search">
 		<Icon name="search" /><input
@@ -63,8 +63,11 @@
 	</div>
 	{#if !filtered.length}<div class="empty">
 			<Icon name="search" size={30} />
-			<h3>No matching destination</h3>
-			<p>Try another spelling or country. Our first collection covers 55 destinations.</p>
+			<h3>Let’s discover this city.</h3>
+			<a class="button" href={'/discover?city=' + encodeURIComponent(query)}
+				>Research {query || 'a new city'}</a
+			>
+			<p>Our launch collection has 32 cities. We can research another city for you.</p>
 			<button
 				class="button secondary"
 				onclick={() => {

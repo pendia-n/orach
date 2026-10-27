@@ -111,11 +111,13 @@
 								<h3>{entry.name}</h3>
 								<p>{entry.description}</p>
 								<div class="entry-price">
-									{active === 'neighbourhood'
-										? 'Explore this area'
-										: entry.amount !== null
-											? money(entry.amount, data.city.currency)
-											: 'Price not confirmed'}<small
+									{entry.status === 'Source reference'
+										? 'Read original source'
+										: active === 'neighbourhood'
+											? 'Explore this area'
+											: entry.amount !== null
+												? money(entry.amount, data.city.currency)
+												: 'Price not confirmed'}<small
 										>{active === 'neighbourhood'
 											? 'Local character and practical details'
 											: entry.amount !== null
