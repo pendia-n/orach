@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { cities } from '#lib/catalog';
+	let {data} = $props();
 	import Icon from '#lib/components/Icon.svelte';
 	import CityArt from '#lib/components/CityArt.svelte';
 	let query = $state('');
-	const featured = ['manchester', 'tokyo', 'phuket', 'kaohsiung'].map((s) =>
-		cities.find((c) => c.slug === s)!
-	);
+	const featured = $derived(['manchester', 'tokyo', 'phuket', 'kaohsiung'].map((s) =>
+		data.destinations.find((c) => c.slug === s)!
+	));
 </script>
 
 <svelte:head><title>Orach — Find your everyday, somewhere new</title></svelte:head>
