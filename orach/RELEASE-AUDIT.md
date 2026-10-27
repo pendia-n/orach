@@ -20,7 +20,11 @@
 
 ## External blocker
 
-Stripe CLI credentials report expiry on 2026-10-10. A read-only API attempt failed and requires fresh login. `stripe login` must be completed before sandbox billing lifecycle checks can continue. No live charge has been made to simulate validation.
+Stripe CLI authentication was refreshed and a read-only sandbox API request succeeded. The user confirmed that the three subscription lifecycle events are enabled on the existing live Orach webhook; that confirmation is accepted without rechecking. Live payment completion, renewal/failure/cancellation delivery, subscribed research queue execution and paid printable-summary access remain unverified. No live charge has been made to simulate validation. The CLI key lacks webhook-write permission, and the connected Stripe app also rejected write access.
+
+## Latest correction
+
+Printable summaries now resolve destinations from the database-backed city directory, including newly researched cities, and explicitly label an unknown currency.
 
 ## Product limitation
 
