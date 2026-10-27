@@ -1,3 +1,5 @@
+import {researchPreview} from '../src/lib/server/research-preview.ts';
+import {providerJson} from '../src/lib/server/provider-json.ts';
 import { writeResearch } from '../src/lib/server/research-cache.ts';
 import { cities } from '../src/lib/catalog.ts';
 interface ResearchEnv {
@@ -186,7 +188,7 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 					}
 				);
 				if (!response.ok) throw new Error('Provider HTTP ' + response.status);
-				const result = await response.json();
+				const result = await providerJson(response);
 				await writeResearch(
 					env.DB,
 					city.slug,
@@ -208,7 +210,7 @@ export async function refresh(env: ResearchEnv, date = new Date()) {
 						.bind(actual - reserved, month, provider)
 						.run();
 				await env.DB.prepare("UPDATE research_jobs SET status='needs_review',result=? WHERE id=?")
-					.bind(JSON.stringify(result), id)
+					.bind(JSON.stringify(researchPreview(result)), id)
 					.run();
 			} catch (e) {
 				await env.DB.prepare("UPDATE research_jobs SET status='failed',error=? WHERE id=?")

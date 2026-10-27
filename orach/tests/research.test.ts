@@ -25,11 +25,11 @@ test('no active subscriber means no ranking, jobs or provider calls', async () =
 
 test('active subscription refresh preserves all eight provider routes and complete JSON', async () => {
  const requests: {url:string;body:Record<string,unknown>}[]=[];
- let savedLarge=false;
+ let savedLarge=false,archivedBytes=0;
  const db={
   prepare(sql:string){
    const statement={
-    bind(...values:unknown[]){if(sql.includes("status='needs_review'")){const payload=String(values[0]);JSON.parse(payload);if(payload.length>250000)savedLarge=true;}return statement;},
+    bind(...values:unknown[]){if(sql.includes('INSERT OR IGNORE INTO section_research_chunks')){archivedBytes+=String(values[4]).length;if(archivedBytes>250000)savedLarge=true;}if(sql.includes("status='needs_review'")){const payload=String(values[0]);JSON.parse(payload);if(payload.length>250000)savedLarge=true;}return statement;},
     async first(){return sql.includes('FROM subscriptions')?{id:'subscription-fixture'}:{used:1};},
     async all(){assert(sql.includes("'-7 days'"));assert(sql.includes('LIMIT 10'));return {results:[{slug:'tokyo',name:'Tokyo',country:'Japan'}]};},
     async run(){return {meta:{changes:1}};}

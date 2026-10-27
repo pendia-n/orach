@@ -1,3 +1,4 @@
+import {providerJson} from './provider-json.ts';
 import {researchPreview} from './research-preview.ts';
 import {writeResearch} from './research-cache.ts';
 import {overviewRequest,sectionRequest,type ResearchSection} from './research-requests.ts';
@@ -59,7 +60,7 @@ export async function runCitySection(env:Env,task:CityTask){
 			signal: AbortSignal.timeout(25000)
 		});
 		if (!response.ok) throw new Error('Research provider HTTP ' + response.status);
-		const result = (await response.json()) as Record<string, unknown>;
+		const result = (await providerJson(response)) as Record<string, unknown>;
 		const serialized = JSON.stringify(result);
 		if (new TextEncoder().encode(serialized).length > 1800000)
 			throw new Error('Response exceeds storage limit; retained as failed rather than truncated.');
