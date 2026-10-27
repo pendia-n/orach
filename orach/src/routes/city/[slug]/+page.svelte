@@ -41,6 +41,7 @@
 
 <svelte:head><title>{data.city.name} fieldnotes — Orach</title></svelte:head>
 <div class="container">
+ {#if data.images.length}<div style="display:flex;gap:12px;overflow-x:auto;padding:16px 0" aria-label="City image gallery">{#each data.images as image}<a href={image} target="_blank" rel="noreferrer"><img src={image} alt={data.city.name + ' — city image'} loading="lazy" referrerpolicy="no-referrer" style="height:180px;max-width:300px;object-fit:cover;border-radius:12px" onerror={(event)=>{(event.currentTarget as HTMLImageElement).style.display='none'}} /></a>{/each}</div>{/if}
 	<a href="/explore" class="back">← All destinations</a>
 	<section class="city-hero">
 		<div>

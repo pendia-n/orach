@@ -43,7 +43,7 @@ async function reserve(
 }
 export async function refresh(env: ResearchEnv, date = new Date()) {
 	const subscriber = await env.DB.prepare(
-		"SELECT id FROM subscriptions WHERE status IN ('active','trialing') AND current_period_end>? LIMIT 1"
+		"SELECT id FROM subscriptions WHERE status='active' AND current_period_end>? LIMIT 1"
 	)
 		.bind(Math.floor(date.getTime() / 1000))
 		.first();

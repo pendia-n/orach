@@ -4,6 +4,7 @@
 	import CityArt from '#lib/components/CityArt.svelte';
 	import { page } from '$app/state';
 	import { api } from '#lib/client';
+	let {data} = $props();
 	let query = $state(page.url.searchParams.get('q') ?? ''),
 		region = $state('All destinations');
 	const regions = [
@@ -81,7 +82,7 @@
 					onclick={() => track(city.slug)}
 					href={'/city/' + city.slug}
 					><div class="art-wrap">
-						<CityArt color={city.color} variant={i} /><span
+						{#if data.covers[city.slug]}<img src={data.covers[city.slug]} alt={city.name} loading="lazy" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover" onerror={(event)=>{(event.currentTarget as HTMLImageElement).style.display='none'}} />{:else}<CityArt color={city.color} variant={i} />{/if}<span
 							class="badge"
 							class:draft={city.status === 'draft'}
 							>{city.status === 'draft' ? 'Research preview' : 'Awaiting profile'}</span

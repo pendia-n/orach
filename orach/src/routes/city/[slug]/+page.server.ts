@@ -58,7 +58,9 @@ export const load = async ({ params, platform }: import('./$types').PageServerLo
 			})
 		);
 	}
-	return {
+	const imageRow = platform?.env.DB ? await platform.env.DB.prepare('SELECT images_json FROM city_images WHERE city_slug=?').bind(city.slug).first<{images_json:string}>() : null;
+	const images: string[] = imageRow ? JSON.parse(imageRow.images_json) : [];
+	return { images,
 		city: {
 			...city,
 			status: entries.length || Object.keys(research).length ? ('draft' as const) : city.status

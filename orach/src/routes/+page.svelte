@@ -3,7 +3,7 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import CityArt from '#lib/components/CityArt.svelte';
 	let query = $state('');
-	const featured = ['manchester', 'tokyo', 'lisbon', 'hong-kong'].map((s) =>
+	const featured = ['manchester', 'tokyo', 'phuket', 'kaohsiung'].map((s) =>
 		cities.find((c) => c.slug === s)!
 	);
 </script>

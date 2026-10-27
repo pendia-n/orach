@@ -1,3 +1,4 @@
+import {researchPreview} from '../src/lib/server/research-preview.ts';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
@@ -21,7 +22,7 @@ for(const city of cities){
   const chars=Array.from(serialized), chunks=[];
   for(let offset=0;offset<chars.length;offset+=8000)chunks.push(chars.slice(offset,offset+8000).join(''));
   for(let index=0;index<chunks.length;index++)sql.push(`INSERT OR IGNORE INTO section_research_chunks(city_slug,section,version,chunk_index,content) VALUES(${quote(city.slug)},${quote(section)},${quote(version)},${index},${quote(chunks[index])});`);
-  sql.push(`INSERT INTO section_research(city_slug,section,provider_format,response_json) VALUES(${quote(city.slug)},${quote(section)},${quote(record.format)},${quote(JSON.stringify({storage:'chunks',version,count:chunks.length}))}) ON CONFLICT(city_slug,section) DO UPDATE SET provider_format=excluded.provider_format,response_json=excluded.response_json,imported_at=CURRENT_TIMESTAMP;`);
+  sql.push(`INSERT INTO section_research(city_slug,section,provider_format,response_json) VALUES(${quote(city.slug)},${quote(section)},${quote(record.format)},${quote(JSON.stringify({storage:'chunks',version,count:chunks.length,preview:researchPreview(raw)}))}) ON CONFLICT(city_slug,section) DO UPDATE SET provider_format=excluded.provider_format,response_json=excluded.response_json,imported_at=CURRENT_TIMESTAMP;`);
   inventory.push({city:city.name,section,format:record.format,counts:record.counts,warnings:record.warnings});
  }
 }
