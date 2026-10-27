@@ -42,3 +42,7 @@ The twice-monthly cron (1st and 15th, 02:00 UTC) runs research only when an unex
 Run `pnpm check`, `node --experimental-strip-types --test tests/*.test.ts`, and `pnpm build`. The build's finalize-worker step must run: the Svelte adapter regenerates the Worker entry, and the finalizer restores fetch, scheduled and queue handlers. Apply all migrations, then deploy the existing Worker. Never deploy a second research Worker.
 
 Session cookies are Secure, HttpOnly, SameSite=Lax and eight days. Keys remain server-side. Research caches and collection scripts must never embed credentials. Current validation and outstanding work are recorded in IMPLEMENTATION-STATUS.md.
+
+## Automatic currency conversion
+
+The planner fetches Frankfurter v2 rates automatically when the familiar currency is a complete three-letter code, including TND where supported. Blank/incomplete inputs do not fetch rates. The server caches each currency pair daily in D1 and returns the source rate date. Cached older rates are labelled if refresh fails. Users can override the rate manually; reference rates exclude bank/card fees. Destination currency remains separate from familiar currency.

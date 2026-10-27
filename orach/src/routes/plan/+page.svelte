@@ -40,6 +40,19 @@
   }catch(e){addMessage=(e as Error).message;}finally{addingBusy=false;}
  }
  const destination = $derived(destinations.find((c) => c.slug === city)!);
+let rateNote=$state(''),manualRate=$state(false);
+ $effect(()=>{
+  const base=destination.currency,quote=currency.trim().toUpperCase();
+  let cancelled=false;
+  rate=0;manualRate=false;rateNote='';
+  if(/^[A-Z]{3}$/.test(quote)&&base!=='XXX'){
+   rateNote='Getting exchange rate…';
+   const timer=setTimeout(()=>{void api('exchange-rate?base='+encodeURIComponent(base)+'&quote='+encodeURIComponent(quote)).then(result=>{
+    if(!cancelled&&!manualRate){rate=result.rate;rateNote=`${result.stale?'Last available':'Reference'} rate · ${result.date} · Frankfurter`;}
+   }).catch(e=>{if(!cancelled&&!manualRate)rateNote=(e as Error).message;});},350);
+   return ()=>{cancelled=true;clearTimeout(timer);};
+  }
+ });
 	const nights = $derived(
 		arrival && departure ? Math.round((Date.parse(departure) - Date.parse(arrival)) / 86400000) : 0
 	);
@@ -307,7 +320,8 @@
 						max="100000000"
 						step="0.000001"
 						bind:value={rate}
-					/><small>{currency} · your reference rate; not live</small>
+      oninput={()=>{manualRate=true;rateNote='Your manual rate';}}
+     /><small>{currency.toUpperCase()} · {rateNote || 'Enter your familiar currency to load a rate.'} Reference rates exclude bank/card fees.</small>
 				</div>
 			</div>
 			<button class="button" disabled={busy}
@@ -344,7 +358,7 @@
 					<span>In your familiar currency</span><strong
 						>{familiar !== null && validDates
 							? money(familiar, currency)
-							: 'Add your reference rate'}</strong
+							: 'Enter your familiar currency'}</strong
 					>
 				</div>
 				<small
