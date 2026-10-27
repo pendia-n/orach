@@ -187,7 +187,7 @@
 		>
 	</div>
 	{#if selected}<h2>{selected.name}</h2>
-		<p>{selected.detail}</p>
+		<p style="white-space:pre-line">{selected.detail}</p>
 		<p class="small-text">
 			Evidence: {selected.evidence}. Current price and availability have not been reconfirmed.
 		</p>

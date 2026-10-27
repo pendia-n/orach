@@ -1,3 +1,4 @@
+import {priceEvidence} from './price-evidence.ts';
 import type { Entry, Section } from '../catalog.ts';
 export function researchEntries(input: unknown, section: Section, city: string): Entry[] {
 	if (!input || typeof input !== 'object') return [];
@@ -92,6 +93,7 @@ export function researchEntries(input: unknown, section: Section, city: string):
 				: typeof row.markdown==='string'?row.markdown:typeof row.text==='string'?row.text:typeof row.raw_content==='string'?row.raw_content:typeof row.description === 'string'
 					? row.description
 					: highlights;
+		const pricePassages=Array.isArray(row.price_evidence)?row.price_evidence.filter((x):x is string=>typeof x==='string'):priceEvidence(passage);
 		const quote = passage.split(/\s+/).filter(Boolean).slice(0, 25).join(' ');
 		records.push({
 			id: `${city}-${section}-source-${index}`,
@@ -99,7 +101,7 @@ export function researchEntries(input: unknown, section: Section, city: string):
 			name: row.title,
 			description: quote || 'Open the linked source for the original information.',
 			detail:
-				'This is a collected source reference, not a verified venue recommendation. Check its exact location, dates, prices and eligibility before relying on it.',
+				'This is a collected source reference, not a verified venue recommendation. Check its exact location, dates, prices and eligibility before relying on it.'+(pricePassages.length?'\n\nSource price mentions — these may describe optional fees, deposits or restricted offers rather than the total cost:\n'+pricePassages.join('\n\n'):''),
 			amount: null,
 			unit: '',
 			source,
