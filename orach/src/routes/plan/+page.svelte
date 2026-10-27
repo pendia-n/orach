@@ -193,15 +193,15 @@
 					>{#each destinations as c}<option value={c.slug}>{c.name}, {c.country}</option>{/each}</select
 				>
 			</div>
- <button type="button" class="button secondary" onclick={()=>addingCity=!addingCity}>Can't find your city? Add another city</button>
- {#if addingCity}<section class="panel" style="margin:16px 0" aria-label="Add a destination">
- <h3>Add your destination</h3><p>Your dates and budget inputs stay here.</p>
+ <button type="button" class="text-link add-city-toggle" onclick={()=>addingCity=!addingCity}>Can't find your city? Add another city</button>
+ {#if addingCity}<section class="add-destination" aria-label="Add a destination">
+ <h3>Somewhere else?</h3><p class="small-text muted">Add a city and keep planning right here.</p>
  {#if data.user}
- <label class="label" for="add-city">City</label><input id="add-city" bind:value={newCity} maxlength="80" />
- <label class="label" for="add-country">Country or territory</label><input id="add-country" bind:value={newCountry} list="destination-countries" maxlength="80" />
+ <div class="field"><label for="add-city">City</label><input id="add-city" bind:value={newCity} maxlength="80" placeholder="For example, Seoul" /></div>
+ <div class="field"><label for="add-country">Country or territory</label><input id="add-country" bind:value={newCountry} list="destination-countries" maxlength="80" placeholder="For example, South Korea" /></div>
  <datalist id="destination-countries">{#each [...new Set(destinations.map(c=>c.country))] as country}<option value={country}></option>{/each}</datalist>
- {#if inferredCurrency}<p class="small-text">Local currency: {inferredCurrency}</p>{:else}<label class="label" for="add-currency">Confirm local currency</label><input id="add-currency" bind:value={newCurrency} maxlength="3" placeholder="Three-letter currency code" />{/if}
- <p class="small-text">Free accounts get a saved overview. Plus members also commission all eight sections, within research allowances.</p>
+ {#if inferredCurrency}<p class="small-text">Local currency: {inferredCurrency}</p>{:else}<div class="field"><label for="add-currency">Local currency</label><input id="add-currency" bind:value={newCurrency} maxlength="3" placeholder="For example, KRW" /></div>{/if}
+ <p class="small-text muted">Your city overview is free. Plus adds research across all eight sections.</p>
  <button type="button" class="button" disabled={addingBusy} onclick={addCity}>{addingBusy?'Adding your city…':'Add and select city'}</button>
  {#if addMessage}<p role="status">{addMessage}</p>{/if}
  {:else}<a href="/sign-up" class="button">Sign up free to add a city</a>{/if}
@@ -405,6 +405,14 @@
 </div>
 
 <style>
+ .add-city-toggle{margin:0 0 18px;padding:0;background:none;border:0;cursor:pointer;text-align:left;font:inherit}
+ .add-destination{padding:24px;margin:0 0 24px;border:1px solid #d9e1dc;border-radius:16px;background:#f7f9f5;display:flex;flex-direction:column;gap:18px}
+ .add-destination .field{margin:0;min-width:0}
+ .add-destination h3,.add-destination p{margin:0}
+ .add-destination input{width:100%;box-sizing:border-box}
+ .add-destination .button{align-self:flex-start}
+ @media(max-width:600px){.add-destination{padding:18px}.add-destination .button{width:100%}}
+
 	.planner-layout {
 		display: grid;
 		grid-template-columns: 1fr 370px;
