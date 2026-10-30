@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '#lib/components/Icon.svelte';
+ let {data}=$props();
 </script>
 
 <svelte:head><title>Orach Plus — Orach pricing</title></svelte:head>
@@ -46,15 +47,13 @@
 			<a class="button full" href="/plan">Build your stay first<Icon name="arrow" size={17} /></a
 			><small
 				>Renews monthly until cancelled. Manage or cancel through your billing portal. Stripe Checkout supports eligible fiat and
-				USDC methods when payments are configured.</small
+				USDC methods where eligible.</small
 			>
 		</section>
 	</div>
-	<div class="notice" style="max-width:940px;margin:25px auto">
-		Launch price proposal: US$7.99. Payments remain unavailable until the checkout and webhook are
-		configured. Data coverage is shown per city; membership does not promise a complete or
-		live-confirmed city profile.
-	</div>
+
+ {#if !data.billingAvailable}<div class="notice" style="max-width:940px;margin:25px auto" role="status">Checkout is temporarily unavailable. Your free account and saved plans remain available.</div>{/if}
+
 	<div class="prose">
 		<h2>Before you buy</h2>
 		<p>
